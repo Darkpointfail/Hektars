@@ -121,6 +121,7 @@ tr.click{cursor:pointer} tr.click:hover td{background:var(--sunk)}
 ul.checks{list-style:none;margin:0;padding:0 18px 10px}ul.checks li{display:flex;gap:10px;align-items:flex-start;padding:7px 0;border-top:1px solid var(--line2)}ul.checks li:first-child{border-top:0}
 ul.checks label{display:flex;gap:10px;flex:1;min-width:0;cursor:pointer}ul.checks input{width:18px;height:18px;margin-top:2px;flex:none;accent-color:var(--accent)}ul.checks .body{display:block;min-width:0}ul.checks .w{display:block;font-size:.8rem;color:var(--muted);margin-top:2px}ul.checks .t{font-weight:600}
 ul.checks input:checked+.body .t{text-decoration:line-through;color:var(--muted)}
+.chips{display:flex;flex-wrap:wrap;gap:6px}.pick{font:inherit;font-size:.8rem;padding:6px 10px;border-radius:99px;border:1px solid var(--line);background:var(--surface);color:var(--ink);cursor:pointer;display:inline-flex;gap:6px;align-items:center}.pick:hover{border-color:var(--accent)}.pick.on{background:var(--accent-soft);border-color:var(--accent);color:var(--accent);font-weight:600}
 .dtbar button{font-size:.88rem!important;padding:8px 16px!important}
 .seg{display:flex;flex-wrap:wrap;gap:4px;align-items:center}
 .seg button{font:inherit;font-size:.78rem;font-weight:600;padding:6px 11px;border-radius:8px;border:1px solid var(--line);background:var(--surface);color:var(--muted);cursor:pointer}
@@ -184,6 +185,7 @@ code.bm{display:block;font:12px/1.45 var(--f-mono);background:var(--sunk);paddin
   <nav class="tabs" aria-label="Pages">
     <a href="#route" data-p="route"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21s-7-6.2-7-12a7 7 0 0 1 14 0c0 5.8-7 12-7 12z"/><circle cx="12" cy="9" r="2.5"/></svg>Sur la route</a>
     <a href="#dashboard" data-p="dashboard"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg>Dashboard</a>
+    <a href="#appels" data-p="appels"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2"/></svg>Appels</a>
     <a href="#produits" data-p="produits"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 2h4v5l2 3v12H8V10l2-3V2z"/></svg>Produits</a>
     <a href="#synchro" data-p="synchro" id="navsync" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 11a8 8 0 0 0-14.9-3M4 13a8 8 0 0 0 14.9 3"/><path d="M4 4v4h4M20 20v-4h-4"/></svg>Synchroniser</a>
     <a href="#perf" data-p="perf"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 17l5-5 4 4 8-8"/><path d="M15 8h5v5"/></svg>Performances</a>
@@ -365,7 +367,7 @@ async function saveSet(f,patch,msg){const key=fk(f);const row={...(SETTINGS[key]
 const ro=IS_ADMIN?'':' disabled';
 
 // state
-const st={rep:IS_ADMIN?LS.get('rep',ME.rep_name):ME.rep_name,page:'route',fam:null,q:'',color:'',ptype:'',route:null,dt:LS.get('dt','')};
+const st={rep:IS_ADMIN?LS.get('rep',ME.rep_name):ME.rep_name,page:'route',fam:null,q:'',color:'',ptype:'',route:null,dt:LS.get('dt',''),calls:LS.get('calls',[]),cq:''};
 const reps=D.reps;
 const repSel=document.getElementById('rep');
 repSel.innerHTML=reps.map(r=>`<option${r===st.rep?' selected':''}>${esc(r)}</option>`).join('');
@@ -483,6 +485,30 @@ function dashView(){const ms=myStores();const all=actionsFor(ms);
    ${gs.length>lim?`<div class="pad"><button class="btn" data-more>Voir ${Math.min(20,gs.length-lim)} magasins de plus</button></div>`:''}</section>
   <section class="panel"><div class="panel-h"><h2>Ventes par période${st.dt?' ('+st.dt+')':''}</h2><p>Caisses vendues dans tes magasins, cette année (ligne pleine) et l'an passé (pointillé).</p></div><div class="pad">${lineChart(t,l,'Ventes par période (cs)',true)}</div></section>
   ${st.dt?'':lossPanel(ms)}`}
+// ---------- Session d'appels ----------
+const CALLTXT={O:'OBL sans stock : faire recommander',R:'En rupture : faire recommander',L:o=>`Stock faible (${nf0.format(o.inv)} u.) : faire recommander`,P:o=>`Plus en magasin depuis au moins 3 périodes (${cs(Math.max(o.t13,o.l13))} cs/an au meilleur) : relancer`,
+  A:o=>`Jamais vendu ici, ${o.np} magasins comparables le vendent (${cs(o.p50)} cs/an en médiane) : proposer`,S:o=>`${cs(o.t13)} cs/an ici contre ${cs(o.p50)} chez les pairs : pousser`,
+  N:o=>`Absent, ${o.np} magasins comparables le vendent : placer vite`,D:o=>`${nf0.format(o.inv)} u. en stock sans vente sur 3 périodes : mettre en avant`};
+function callOps(s,f){const ty=prodType(f);return byStore[s.i].filter(o=>o.f===f.i&&CALLTXT[o.t]&&(ty!=='RA'||o.t==='O'||(o.t==='L'&&isObl(o.s,o.f))))}
+function callView(){const ms=myStores();const sel=F.filter(f=>st.calls.includes(fk(f)));
+  const q=(st.cq||'').normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase();
+  const cand=F.filter(f=>isActive(f.i)&&(!st.dt||prodType(f)===st.dt)).map(f=>({f,n:ms.filter(s=>callOps(s,f).length).length}))
+    .filter(x=>(q?(x.f.n+' '+x.f.codes.join(' ')).normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase().includes(q):x.n>0)).sort((a,b)=>b.n-a.n).slice(0,q?30:15);
+  const rows=ms.map(s=>{const it=[];sel.forEach(f=>callOps(s,f).forEach(o=>it.push({o,f,k:D.ref+'|'+s.no+'|'+fk(f)+'|'+o.t})));return {s,it,v:it.reduce((a,x)=>a+x.o.v,0)}})
+    .filter(r=>r.it.length).sort((a,b)=>b.v-a.v||b.it.length-a.it.length);
+  const left=rows.filter(r=>r.it.some(x=>!DONE.get(x.k))).length;
+  const txt=o=>{const t=CALLTXT[o.t];return typeof t==='function'?t(o):t};
+  return `<div class="head"><div><span class="eyebrow">Territoire de ${esc(st.rep)} · EZFocus période ${D.ref}</span><h1>Session d'appels</h1><p class="muted" style="margin:4px 0 0;max-width:72ch">Choisis le ou les produits à vendre : l'outil sort les magasins à appeler, triés par caisses en jeu (ventes perdues, rupture, potentiel selon les magasins comparables).</p></div></div>
+  <section class="panel"><div class="panel-h"><h2>1. Produits à vendre</h2>${sel.length?`<button class="btn sm" data-callclear>Tout retirer</button>`:''}</div><div class="pad" style="display:flex;flex-direction:column;gap:12px">
+    ${sel.length?`<div class="chips">${sel.map(f=>`<button class="pick on" data-callf="${f.i}">${esc(pname(f))} ${typeChip(f)} <span aria-hidden="true">×</span></button>`).join('')}</div>`:''}
+    <div class="filters"><input type="search" id="cq" placeholder="Chercher un produit (nom ou code SAQ)…" value="${esc(st.cq||'')}" aria-label="Chercher un produit">
+    <div class="seg" role="group" aria-label="Type">${DT.map(([k,lb])=>`<button data-dt="${k}" aria-pressed="${(st.dt||'')===k}">${lb}</button>`).join('')}</div></div>
+    <div class="chips">${cand.filter(x=>!st.calls.includes(fk(x.f))).map(x=>`<button class="pick" data-callf="${x.f.i}">+ ${esc(pname(x.f))} ${typeChip(x.f)} <span class="muted">${x.n} mag.</span></button>`).join('')||'<span class="muted">Aucun produit trouvé.</span>'}</div>
+    ${q?'':'<p class="muted" style="font-size:.78rem;margin:0">Suggestions : les produits avec le plus de magasins à appeler. Utilise la recherche pour les autres.</p>'}</div></section>
+  <section class="panel"><div class="panel-h"><h2>2. Magasins à appeler</h2><span class="muted num">${left} / ${rows.length}</span><p>${sel.length?'Coche chaque produit une fois l\'appel fait : c\'est aussi coché dans le tableau de bord.':'Choisis au moins un produit ci-dessus.'}</p></div>
+    ${rows.map(r=>`<div class="agrp"><div class="agrp-h"><div><span class="t">${esc(r.s.n)}</span> <span class="muted" style="font-size:.78rem">${esc(r.s.v)} · n° ${r.s.no} · ${BAN[r.s.ban]||''} · ${r.s.days==null?'jamais visité':'visite il y a '+r.s.days+' j'}</span></div><span class="v" style="font:500 .78rem var(--f-mono)">${money(r.v)}</span></div>
+      <ul class="checks">${r.it.map(x=>{const d=DONE.get(x.k);return `<li><label><input type="checkbox" data-act="${esc(x.k)}"${d?' checked':''}><span class="body"><span class="t">${esc(pname(x.f))}</span> ${typeChip(x.f)}<span class="w">${txt(x.o)}${d?` · fait${d.by?' par '+esc(d.by):''}`:''}</span></span></label>${x.o.v?`<span class="v">${money(x.o.v)}</span>`:''}</li>`}).join('')}</ul></div>`).join('')||(sel.length?'<div class="empty pad">Aucun magasin à appeler pour ces produits sur ton territoire.</div>':'')}</section>`}
+
 // actions cochées : table Supabase actions_done si elle existe, sinon cet appareil
 let DONE=new Map(),DONE_LOCAL=false;
 async function loadDone(){const {data,error}=await SB.from('actions_done').select('k,done_by,done_at');
@@ -600,22 +626,25 @@ function perfView(){const rows=(IS_ADMIN?reps:[ME.rep_name].filter(r=>reps.inclu
 function synchroView(){if(!IS_ADMIN)return '<div class="panel empty">Réservé à l\'administrateur.</div>';
   return `<div class="head"><div><span class="eyebrow">Données actuelles : période ${D.ref}, extraites le ${dataDate}</span><h1>Synchroniser EZFocus</h1></div></div>
   <section class="panel"><div class="panel-h"><h2>Mettre à jour les données</h2><p>À faire chaque matin. Tous les représentants voient les nouvelles données dès que c'est terminé.</p></div><div class="pad">${hkSyncHelp()}</div></section>`}
-const PAGES={route:routeView,dashboard:dashView,produits:prodsView,perf:perfView,synchro:synchroView};
+const PAGES={route:routeView,dashboard:dashView,appels:callView,produits:prodsView,perf:perfView,synchro:synchroView};
 function render(keepFocus){document.getElementById('avatar').textContent=st.rep.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();document.querySelectorAll('nav.tabs a').forEach(a=>a.toggleAttribute('aria-current',a.dataset.p===st.page)||a.dataset.p===st.page&&a.setAttribute('aria-current','page'));
   document.querySelectorAll('nav.tabs a').forEach(a=>{if(a.dataset.p===st.page)a.setAttribute('aria-current','page');else a.removeAttribute('aria-current')});
   document.getElementById('view').innerHTML=PAGES[st.page]();
+  const cq=document.getElementById('cq');if(cq&&keepFocus){cq.focus();cq.setSelectionRange(cq.value.length,cq.value.length)}
   const pq=document.getElementById('pq');if(pq&&keepFocus){pq.focus();pq.setSelectionRange(pq.value.length,pq.value.length)}}
 function fromHash(){const h=location.hash.slice(1);st.page=PAGES[h]?h:'route';st.fam=null;render();window.scrollTo(0,0)}
 window.addEventListener('hashchange',fromHash);
 function openFam(i){st.fam=+i;if(st.page!=='produits'){st.page='produits';history.replaceState(null,'','#produits')}render();window.scrollTo(0,0)}
 function saveRoute(){LS.set(routeKey(),getRoute())}
-document.addEventListener('click',e=>{const t=e.target.closest('[data-gcal],[data-dt],[data-atab],[data-more],[data-calrefresh],[data-pact],[data-setact],[data-fam],[data-back],[data-ptype],[data-color],[data-settype],[data-savepitch],[data-rmphoto],[data-photo],[data-rm],[data-copystop],[data-copyday],[data-addroute]');if(!t)return;const d=t.dataset;
+document.addEventListener('click',e=>{const t=e.target.closest('[data-gcal],[data-dt],[data-callf],[data-callclear],[data-atab],[data-more],[data-calrefresh],[data-pact],[data-setact],[data-fam],[data-back],[data-ptype],[data-color],[data-settype],[data-savepitch],[data-rmphoto],[data-photo],[data-rm],[data-copystop],[data-copyday],[data-addroute]');if(!t)return;const d=t.dataset;
   if(d.pact!=null){st.pact=d.pact;render();return}
   if(d.setact!=null){saveSet(F[st.fam],{active:d.setact==='1'},d.setact==='1'?'Produit actif : il revient dans les recommandations':'Produit inactif : retiré des recommandations');return}
   if(d.fam!=null)return openFam(d.fam);
   if(d.back!=null){st.fam=null;render();return}
   if(d.ptype!=null){st.ptype=d.ptype;render();return}
   if(d.dt!=null){st.dt=d.dt;st.more=0;LS.set('dt',d.dt);render();return}
+  if(d.callf!=null){const k=fk(F[+d.callf]);const a=st.calls;const i=a.indexOf(k);if(i>=0)a.splice(i,1);else a.push(k);LS.set('calls',a);render();return}
+  if(d.callclear!=null){st.calls=[];LS.set('calls',[]);render();return}
   if(d.atab){st.atab=d.atab;st.more=0;render();return}
   if(d.more!=null){st.more=(st.more||20)+20;render();return}
   if(d.color!=null){st.color=d.color;render();return}
@@ -631,7 +660,7 @@ document.addEventListener('click',e=>{const t=e.target.closest('[data-gcal],[dat
   if(d.copyday!=null)return copy(getRoute().stops.map(no=>stopText(S.find(s=>s.no===no))).join('\n\n'));
 });
 document.addEventListener('keydown',e=>{if(e.key==='Enter'&&e.target.matches('tr[data-fam]'))openFam(e.target.dataset.fam)});
-document.addEventListener('input',e=>{if(e.target.id==='pq'){st.q=e.target.value;render(true)}});
+document.addEventListener('input',e=>{if(e.target.id==='pq'){st.q=e.target.value;render(true)}if(e.target.id==='cq'){st.cq=e.target.value;render(true)}});
 document.addEventListener('change',e=>{
   if(e.target.dataset&&e.target.dataset.act!=null){toggleDone(e.target.dataset.act,e.target.checked);return}
   if(e.target.matches&&e.target.matches('[data-dashrep]')){repSel.value=e.target.value;repSel.onchange();return}
