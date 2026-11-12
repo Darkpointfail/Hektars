@@ -271,7 +271,7 @@ async function boot(){
   ME=me;IS_ADMIN=me.role==='admin';
   let D;try{D=await loadData()}catch(err){return screen(`<h1>Erreur de chargement</h1><p class="gate-err">${String(err.message||err)}</p>`)}
   if(location.hash==='#sync')return screen('<h1>En attente des données EZFocus…</h1><p class="muted">Garde cette fenêtre ouverte.</p>');
-  if(!D)return screen(`<h1>Aucune donnée pour l'instant</h1><p class="muted">${IS_ADMIN?'Lance une première synchronisation depuis EZFocus (page Synchroniser).':'L\'administrateur doit lancer une première synchronisation.'}</p>${IS_ADMIN?syncHelp():''}`);
+  if(!D)return screen(`<h1>Aucune donnée pour l'instant</h1><p class="muted">Les données EZFocus arrivent bientôt. Reviens dans quelques minutes.</p>`);
   document.querySelector('.app').classList.remove('gate');
   window.__D=D;startApp();
 }
@@ -359,7 +359,7 @@ const repSel=document.getElementById('rep');
 repSel.innerHTML=reps.map(r=>`<option${r===st.rep?' selected':''}>${esc(r)}</option>`).join('');
 if(!reps.includes(st.rep))st.rep=reps.includes(ME.rep_name)?ME.rep_name:reps[0];
 if(!IS_ADMIN||reps.length<2)repSel.disabled=true;
-document.getElementById('navsync').hidden=!IS_ADMIN;
+document.getElementById('navsync').hidden=true; // synchro gérée hors de l'appli
 repSel.onchange=()=>{st.rep=repSel.value;LS.set('rep',st.rep);st.route=null;if(st.cal&&st.cal.state==='ok')st.cal=null;render()};
 const myStores=()=>S.filter(s=>s.rep===st.rep&&!s.inactive);
 
