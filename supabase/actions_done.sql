@@ -27,3 +27,19 @@ create table if not exists public.call_sessions(
 alter table public.call_sessions enable row level security;
 drop policy if exists cs_all on public.call_sessions;
 create policy cs_all on public.call_sessions for all to authenticated using (public.is_admin() or rep_name = (public.me()).rep_name) with check (public.is_admin() or rep_name = (public.me()).rep_name);
+
+-- Lancements SL (objectif 80 % en 6 semaines) et plan de répartition dans les sessions
+alter table public.call_sessions add column if not exists plan jsonb;
+create table if not exists public.sl_launches(
+  id uuid primary key default gen_random_uuid(),
+  fam_key text not null,
+  qty numeric not null,
+  period text,
+  created_by text,
+  created_at timestamptz not null default now()
+);
+alter table public.sl_launches enable row level security;
+drop policy if exists sl_read on public.sl_launches;
+drop policy if exists sl_write on public.sl_launches;
+create policy sl_read on public.sl_launches for select to authenticated using (public.is_member());
+create policy sl_write on public.sl_launches for insert to authenticated with check (public.is_member());

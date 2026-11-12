@@ -126,6 +126,7 @@ ul.checks input:checked+.body .t{text-decoration:line-through;color:var(--muted)
 .agrp.fin{opacity:.6}input.txt{font:inherit;font-size:1rem;width:100%;max-width:480px;padding:10px 12px;border-radius:8px;border:1px solid var(--line);background:var(--surface);color:var(--ink)}
 .seg.res{margin-top:8px}.seg.res button{font-size:.76rem;padding:5px 10px}
 .seg.res .r-cmd[aria-pressed=true]{background:var(--good);border-color:var(--good);color:#fff}.seg.res .r-prom[aria-pressed=true]{background:var(--S);border-color:var(--S);color:#fff}.seg.res .r-non[aria-pressed=true]{background:var(--R);border-color:var(--R);color:#fff}.seg.res .r-nr[aria-pressed=true]{background:var(--P);border-color:var(--P);color:#fff}
+.slform{display:flex;flex-wrap:wrap;gap:14px}.slform label{display:flex;flex-direction:column;gap:6px;font-size:.78rem;font-weight:600;color:var(--muted)}.slform select,.slform input{font:inherit;font-size:.95rem;padding:9px 10px;border-radius:8px;border:1px solid var(--line);background:var(--surface);color:var(--ink);min-width:200px}
 .dtbar button{font-size:.88rem!important;padding:8px 16px!important}
 .seg{display:flex;flex-wrap:wrap;gap:4px;align-items:center}
 .seg button{font:inherit;font-size:.78rem;font-weight:600;padding:6px 11px;border-radius:8px;border:1px solid var(--line);background:var(--surface);color:var(--muted);cursor:pointer}
@@ -492,7 +493,7 @@ function dashView(){const ms=myStores();const all=actionsFor(ms);
 // ---------- Session d'appels ----------
 const CALLTXT={O:'OBL sans stock : faire recommander',R:'En rupture : faire recommander',L:o=>`Stock faible (${nf0.format(o.inv)} u.) : faire recommander`,P:o=>`Plus en magasin depuis au moins 3 périodes (${cs(Math.max(o.t13,o.l13))} cs/an au meilleur) : relancer`,
   A:o=>`Jamais vendu ici, ${o.np} magasins comparables le vendent (${cs(o.p50)} cs/an en médiane) : proposer`,S:o=>`${cs(o.t13)} cs/an ici contre ${cs(o.p50)} chez les pairs : pousser`,
-  N:o=>`Absent, ${o.np} magasins comparables le vendent : placer vite`,D:o=>`${nf0.format(o.inv)} u. en stock sans vente sur 3 périodes : mettre en avant`};
+  N:o=>`Absent, ${o.np} magasins comparables le vendent : placer vite`,SLP:o=>`Lancement SL : proposer ${cs(o.v)} cs`,D:o=>`${nf0.format(o.inv)} u. en stock sans vente sur 3 périodes : mettre en avant`};
 function callOps(s,f){const ty=prodType(f);return byStore[s.i].filter(o=>o.f===f.i&&CALLTXT[o.t]&&(ty!=='RA'||o.t==='O'||(o.t==='L'&&isObl(o.s,o.f))))}
 // sessions d'appels : table Supabase call_sessions si elle existe, sinon cet appareil
 let SESS=[],SESS_LOCAL=false;
@@ -504,7 +505,9 @@ async function saveSess(x,isNew){if(SESS_LOCAL){if(isNew)SESS.unshift(x);LS.set(
   if(isNew)SESS.unshift(data);else Object.assign(x,data);return true}
 const sessOf=id=>SESS.find(x=>String(x.id)===String(id));
 const curProducts=()=>{const x=st.sess&&st.sess!=='new'?sessOf(st.sess):null;return x?x.products:st.calls};
-function sessRows(x){const ms=S.filter(s=>s.rep===x.rep_name&&!s.inactive);const sel=F.filter(f=>x.products.includes(fk(f)));
+function sessRows(x){const ms=S.filter(s=>s.rep===x.rep_name&&!s.inactive);
+  if(x.plan){const f=F.find(y=>fk(y)===x.products[0]);if(!f)return [];return ms.filter(s=>x.plan[s.no]).map(s=>({s,it:[{o:{t:'SLP',v:x.plan[s.no],s:s.i,f:f.i},f,k:'sess:'+x.id+'|'+s.no+'|'+fk(f)+'|SLP'}],v:x.plan[s.no]})).sort((a,b)=>b.v-a.v)}
+  const sel=F.filter(f=>x.products.includes(fk(f)));
   return ms.map(s=>{const it=[];sel.forEach(f=>callOps(s,f).forEach(o=>it.push({o,f,k:'sess:'+x.id+'|'+s.no+'|'+fk(f)+'|'+o.t})));return {s,it,v:it.reduce((a,y)=>a+y.o.v,0)}})
     .filter(r=>r.it.length).sort((a,b)=>b.v-a.v||b.it.length-a.it.length)}
 // résultat d'appel : cmd = commandé, prom = promesse de commande, non = pas commandé, nr = pas répondu (à rappeler)
@@ -526,8 +529,48 @@ function productPicker(){const ms=myStores();const cur=curProducts();const sel=F
     <div class="chips">${cand.filter(x=>!cur.includes(fk(x.f))).map(x=>`<button class="pick" data-callf="${x.f.i}">+ ${esc(pname(x.f))} ${typeChip(x.f)} <span class="muted">${x.n} mag.</span></button>`).join('')||'<span class="muted">Aucun produit trouvé.</span>'}</div>
     ${q?'':'<p class="muted" style="font-size:.78rem;margin:0">Suggestions : les produits avec le plus de magasins à appeler. Utilise la recherche pour les autres.</p>'}`}
 const fdate=d=>new Date(d).toLocaleDateString('fr-CA',{day:'numeric',month:'short',year:'numeric'});
+// ---------- Lancements SL : objectif 80 % du lot en 6 semaines ----------
+let SLL=[],SLL_LOCAL=false;
+async function loadSL(){const {data,error}=await SB.from('sl_launches').select('*').order('created_at',{ascending:false});if(error){SLL_LOCAL=true;SLL=LS.get('sl',[]);return}SLL=data||[]}
+async function saveSL(x){if(SLL_LOCAL){x.id=Date.now();SLL.unshift(x);LS.set('sl',SLL);return true}
+  const {data,error}=await SB.from('sl_launches').insert(x).select().single();if(error){toast('Lancement non enregistré : '+error.message);return false}SLL.unshift(data);return true}
+// vitesse de référence : lancements SL passés visibles sur les 13 périodes (caisses vendues en 6 semaines par magasin qui l'a vendu)
+function slLaunches(){return F.filter(f=>prodType(f)==='SL'&&f.nT13>0).map(f=>{const t=famSeries(f.i,null).t;const tot=t.reduce((a,b)=>a+b,0);if(tot<40)return null;
+    let k=-1;for(let j=1;j<12;j++){if(t[j]>0&&t.slice(0,j).reduce((a,b)=>a+b,0)<=tot*.03){k=j;break}}if(k<0)return null;
+    const sold=Math.max(t[k]+.5*(t[k+1]||0),k+2<13?t[k+1]+.5*t[k+2]:0);return {f,k,sold,stores:f.nT13,rate:sold/f.nT13}}).filter(Boolean)}
+function slBench(f){const all=slLaunches().filter(x=>x.f!==f);let cmp=all.filter(x=>x.f.color===f.color&&x.f.px>=f.px*.6&&x.f.px<=f.px*1.6);let basis='même couleur, prix comparable';
+  if(cmp.length<3){cmp=all;basis='tous les SL lancés sur la période'}const r=cmp.map(x=>x.rate).sort((a,b)=>a-b);const med=r.length?r[Math.floor((r.length-1)/2)]:null;return {cmp,med,basis}}
+function slPlan(f,qty){const b=slBench(f);if(!b.med||!qty)return {b,stores:[],need:0};const need=Math.ceil(qty*.8/b.med);
+  const act=S.filter(s=>!s.inactive&&s.t3>0);const max=act.length*b.med/.8;
+  const pool=act.sort((a,b)=>b.t3-a.t3).slice(0,need);const w=pool.reduce((a,s)=>a+s.t3,0);
+  let alloc=pool.map(s=>({s,c:Math.max(1,Math.floor(qty*s.t3/w))}));let left=qty-alloc.reduce((a,x)=>a+x.c,0);
+  for(let j=0;left>0&&alloc.length;j=(j+1)%alloc.length){alloc[j].c++;left--}while(left<0){const x=alloc.reduce((m,y)=>y.c>m.c?y:m);x.c--;left++}
+  return {b,need,max,nAct:act.length,over:need>act.length,stores:alloc.filter(x=>x.c>0)}}
+function slProgress(x){const f=F.find(y=>fk(y)===x.fam_key);if(!f)return null;const k=D.labels.indexOf(x.period);const t=famSeries(f.i,null).t;
+  const sold=k>=0?t.slice(k).reduce((a,b)=>a+b,0):null;return {f,sold,target:x.qty*.8,pct:sold==null?null:sold/(x.qty*.8)}}
+function slNewView(){const sl=F.filter(f=>isActive(f.i)&&prodType(f)==='SL').sort((a,b)=>a.n.localeCompare(b.n,'fr'));const f=sl.find(y=>fk(y)===st.slf);const qty=+st.slq||0;
+  const p=f&&qty?slPlan(f,qty):null;const reps={};(p?p.stores:[]).forEach(x=>{(reps[x.s.rep]=reps[x.s.rep]||{n:0,c:0});reps[x.s.rep].n++;reps[x.s.rep].c+=x.c});
+  return `<div class="head"><div><span class="eyebrow">Lancement SL</span><h1>Planifier un SL</h1><p class="muted" style="margin:4px 0 0;max-width:72ch">Objectif : écouler 80 % du lot en 6 semaines. Entre le nombre de caisses reçues : l'outil calcule combien de magasins il faut, lesquels, et combien de caisses proposer à chacun.</p></div><button class="btn" data-sessback>Retour</button></div>
+  <section class="panel"><div class="pad slform">
+    <label>Produit SL<select data-slf><option value="">Choisir…</option>${sl.map(y=>`<option value="${esc(fk(y))}"${fk(y)===st.slf?' selected':''}>${esc(pname(y))}</option>`).join('')}</select></label>
+    <label>Caisses reçues<input type="text" inputmode="numeric" id="slq" value="${esc(st.slq||'')}" placeholder="ex. 300"></label>
+    <label>Période d'arrivée<select data-slp>${[...D.labels.slice(-3),'Prochaine'].map(l=>`<option${(st.slp||'Prochaine')===l?' selected':''}>${l}</option>`).join('')}</select></label></div></section>
+  ${p?`<div class="kpis"><div class="kpi"><span>Objectif 6 semaines</span><b>${nf0.format(qty*.8)} cs</b><span>80 % de ${nf0.format(qty)} cs</span></div><div class="kpi"><span>Vitesse de référence</span><b>${p.b.med==null?'—':nf1.format(p.b.med)+' cs'}</b><span>par magasin en 6 semaines (${p.b.cmp.length} SL comparables)</span></div><div class="kpi"><span>Magasins nécessaires</span><b>${p.need}</b><span>sur ${S.filter(s=>!s.inactive).length} magasins actifs</span></div><div class="kpi"><span>Par magasin</span><b>${p.stores.length?nf1.format(qty/p.stores.length)+' cs':'—'}</b><span>en moyenne</span></div><div class="kpi${p.over?' alert':''}"><span>Lot max réaliste</span><b>${nf0.format(p.max)} cs</b><span>pour tenir 80 % en 6 sem. avec tous les magasins</span></div></div>
+  ${p.over?`<div class="panel pad" style="border-color:var(--R)"><b>Objectif difficile à la vitesse habituelle.</b> Il faudrait ${p.need} magasins alors qu'il y en a ${p.nAct} qui vendent du Hektars. Avec tous ces magasins, chacun devra vendre ${nf1.format(qty*.8/p.nAct)} cs en 6 semaines, soit ${nf1.format(qty*.8/p.nAct/p.b.med)} fois la vitesse de référence : prévois de la mise en avant (dégustations, promo, îlots).</div>`:''}
+  <section class="panel"><div class="panel-h"><h2>Comment c'est calculé</h2></div><div class="pad" style="font-size:.86rem;line-height:1.5">
+   <p style="margin:0 0 8px">Vitesse de référence : médiane des SL déjà lancés (${esc(p.b.basis)}), caisses vendues sur leurs 6 premières semaines divisées par le nombre de magasins qui les ont vendus. Les magasins retenus sont ceux qui vendent le plus de Hektars sur les 3 dernières périodes. Les caisses sont réparties selon ces ventes.</p>
+   <details class="stl"><summary>Voir les SL comparables</summary><div class="w">${p.b.cmp.map(x=>`${esc(pname(x.f))} : ${cs(x.sold)} cs en 6 sem. dans ${x.stores} magasins (${nf1.format(x.rate)} cs/mag.)`).join('<br>')}</div></details></div></section>
+  <section class="panel"><div class="panel-h"><h2>Répartition par représentant</h2></div><ul class="acts">${Object.entries(reps).sort((a,b)=>b[1].c-a[1].c).map(([r,v])=>`<li><div class="body"><span class="t">${esc(r)}</span><div class="w">${v.n} magasins</div></div><span class="v">${nf0.format(v.c)} cs</span></li>`).join('')}</ul></section>
+  <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn primary" data-sllaunch>Lancer : créer les sessions d'appels${IS_ADMIN?' (une par représentant)':''}</button></div>
+  <section class="panel"><div class="panel-h"><h2>Magasins et caisses à proposer</h2><span class="muted num">${p.stores.length}</span></div><ul class="acts">${p.stores.map(x=>`<li><div class="body"><span class="t">${esc(x.s.n)}</span><div class="w">${esc(x.s.rep)} · ${esc(x.s.v)} · ${cs(x.s.t3)} cs Hektars sur 3 périodes</div></div><span class="v">${x.c} cs</span></li>`).join('')}</ul></section>`
+  :(f&&qty?'<div class="panel empty">Pas assez d\'historique SL pour calculer une vitesse de référence.</div>':'')}`}
+function slCards(){return SLL.map(x=>{const g=slProgress(x);if(!g)return '';const pct=g.pct==null?null:Math.min(1,g.pct);
+  return `<li><div class="body"><span class="t">${esc(pname(g.f))}</span> <span class="chip c-SL">SL</span><div class="w">${nf0.format(x.qty)} cs reçues · arrivée ${esc(x.period)} · objectif ${nf0.format(g.target)} cs en 6 semaines · ${g.sold==null?'ventes visibles à la prochaine mise à jour EZFocus':`${cs(g.sold)} cs vendues depuis l'arrivée (${nf0.format(g.pct*100)} % de l'objectif)`}</div>
+    <div class="prog"><i style="width:${pct==null?0:pct*100}%;background:${pct!=null&&pct>=1?'var(--good)':'var(--accent)'}"></i></div></div></li>`}).join('')}
+
 function callView(){
   if(st.sess==='new')return newSessView();
+  if(st.sess==='sl')return slNewView();
   if(st.sess&&sessOf(st.sess))return sessView(sessOf(st.sess));
   const mine=SESS.filter(x=>IS_ADMIN?x.rep_name===st.rep:x.rep_name===ME.rep_name);
   const stats=mine.map(x=>({x,...sessStats(x)}));const open=stats.filter(y=>!y.x.closed_at);const tot={cmd:0,prom:0,non:0,nr:0};stats.forEach(y=>Object.keys(tot).forEach(k=>tot[k]+=y.n[k]||0));
@@ -536,10 +579,11 @@ function callView(){
   const card=y=>{const pct=y.items?Math.round(y.done/y.items*100):0;return `<li><div class="body"><button class="lnk t" data-opensess="${y.x.id}">${esc(y.x.name)}</button> ${y.x.closed_at?'<span class="chip">Terminée</span>':'<span class="chip c-SA">En cours</span>'}
     <div class="w">${fdate(y.x.created_at)}${y.x.created_by?' · par '+esc(y.x.created_by):''} · ${y.x.products.length} produit${y.x.products.length>1?'s':''} · ${y.done}/${y.items} appels faits · ${y.n.cmd} commandé${y.n.cmd>1?'s':''}, ${y.n.prom} promesse${y.n.prom>1?'s':''}, ${y.n.non} pas commandé${y.n.non>1?'s':''}, ${y.n.nr} pas répondu · taux ${pctTxt(y.rate)}</div>
     <div class="prog"><i style="width:${pct}%"></i></div></div><button class="btn sm" data-opensess="${y.x.id}">Ouvrir</button></li>`};
-  return `<div class="head"><div><span class="eyebrow">Territoire de ${esc(st.rep)} · EZFocus période ${D.ref}</span><h1>Sessions d'appels</h1><p class="muted" style="margin:4px 0 0;max-width:72ch">Crée une session avec le ou les produits à vendre : l'outil sort les magasins à appeler, triés par caisses en jeu. Note le résultat de chaque appel pour suivre tes stats.</p></div><button class="btn primary" data-newsess>Nouvelle session</button></div>
+  return `<div class="head"><div><span class="eyebrow">Territoire de ${esc(st.rep)} · EZFocus période ${D.ref}</span><h1>Sessions d'appels</h1><p class="muted" style="margin:4px 0 0;max-width:72ch">Crée une session avec le ou les produits à vendre : l'outil sort les magasins à appeler, triés par caisses en jeu. Note le résultat de chaque appel pour suivre tes stats.</p></div><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn" data-slnew>Planifier un SL</button><button class="btn primary" data-newsess>Nouvelle session</button></div></div>
   <div class="kpis">${kpi('Sessions',mine.length,'au total')}${kpi('En cours',open.length,'à terminer')}${kpi('Ce mois-ci',month.length,'sessions créées')}${kpi('Appels faits',stats.reduce((a,y)=>a+y.done,0),'sur '+stats.reduce((a,y)=>a+y.items,0)+' prévus')}${kpi('Taux de commande',pctTxt((()=>{const t=tot.cmd+tot.prom+tot.non;return t?tot.cmd/t:null})()),'commandés sur appels aboutis')}</div>
   <div class="kpis">${resKpis(tot)}</div>
   ${SESS_LOCAL?'<p class="muted" style="font-size:.8rem;margin:0">Les sessions sont gardées sur cet appareil seulement tant que la table Supabase n\'est pas créée.</p>':''}
+  ${SLL.length?`<section class="panel"><div class="panel-h"><h2>Lancements SL</h2><span class="muted num">${SLL.length}</span><p>Suivi de l'objectif : 80 % du lot vendu en 6 semaines (ventes de tous les magasins).</p></div><ul class="acts">${slCards()}</ul></section>`:''}
   <section class="panel"><div class="panel-h"><h2>Sessions</h2><span class="muted num">${mine.length}</span></div><ul class="acts">${stats.map(card).join('')||'<li class="empty">Aucune session pour l\'instant. Clique « Nouvelle session ».</li>'}</ul></section>`}
 function newSessView(){const n=st.calls.length;
   return `<div class="head"><div><span class="eyebrow">Territoire de ${esc(st.rep)}</span><h1>Nouvelle session d'appels</h1></div><button class="btn" data-sessback>Annuler</button></div>
@@ -553,8 +597,8 @@ function sessView(x){const y=sessStats(x);const pct=y.items?Math.round(y.done/y.
   <div class="kpis">${resKpis(y.n)}</div>
   <details class="panel"${x.products.length?'':' open'}><summary class="panel-h" style="cursor:pointer"><h2 style="display:inline">Produits de la session (${x.products.length})</h2></summary><div class="pad" style="display:flex;flex-direction:column;gap:12px">${productPicker()}</div></details>
   <section class="panel"><div class="panel-h"><h2>Magasins à appeler</h2><span class="muted num">${y.nStores-y.stores} restants</span><p>Triés par caisses en jeu. Note le résultat de chaque produit. « Pas répondu » garde le magasin dans la liste pour le rappeler.</p></div>
-    ${y.rows.map(r=>{const fin=r.it.every(z=>isFin(z.k));return `<div class="agrp${fin?' fin':''}"><div class="agrp-h"><div><span class="t">${esc(r.s.n)}</span> <span class="muted" style="font-size:.78rem">${esc(r.s.v)} · n° ${r.s.no} · ${BAN[r.s.ban]||''} · ${r.s.days==null?'jamais visité':'visite il y a '+r.s.days+' j'}</span></div><div style="display:flex;gap:8px;align-items:center">${fin?'':`<button class="btn sm" data-resall="nr" data-keys="${esc(r.it.map(z=>z.k).join(';;'))}">Pas répondu</button>`}<span class="v" style="font:500 .78rem var(--f-mono)">${fin?'✓ terminé':money(r.v)}</span></div></div>
-      <ul class="checks">${r.it.map(z=>{const d=DONE.get(z.k),rr=resOf(z.k);return `<li><div class="body" style="flex:1;min-width:0"><span class="t">${esc(pname(z.f))}</span> ${typeChip(z.f)}<span class="w">${txt(z.o)}${z.o.v?' · '+money(z.o.v):''}${d?` · noté${d.by?' par '+esc(d.by):''} le ${new Date(d.at).toLocaleDateString('fr-CA',{day:'numeric',month:'short'})}`:''}</span>
+    ${y.rows.map(r=>{const fin=r.it.every(z=>isFin(z.k));return `<div class="agrp${fin?' fin':''}"><div class="agrp-h"><div><span class="t">${esc(r.s.n)}</span> <span class="muted" style="font-size:.78rem">${esc(r.s.v)} · n° ${r.s.no} · ${BAN[r.s.ban]||''} · ${r.s.days==null?'jamais visité':'visite il y a '+r.s.days+' j'}</span></div><div style="display:flex;gap:8px;align-items:center">${fin?'':`<button class="btn sm" data-resall="nr" data-keys="${esc(r.it.map(z=>z.k).join(';;'))}">Pas répondu</button>`}<span class="v" style="font:500 .78rem var(--f-mono)">${fin?'✓ terminé':(x.plan?cs(r.v)+' cs à placer':money(r.v))}</span></div></div>
+      <ul class="checks">${r.it.map(z=>{const d=DONE.get(z.k),rr=resOf(z.k);return `<li><div class="body" style="flex:1;min-width:0"><span class="t">${esc(pname(z.f))}</span> ${typeChip(z.f)}<span class="w">${txt(z.o)}${z.o.v&&z.o.t!=='SLP'?' · '+money(z.o.v):''}${d?` · noté${d.by?' par '+esc(d.by):''} le ${new Date(d.at).toLocaleDateString('fr-CA',{day:'numeric',month:'short'})}`:''}</span>
         <div class="seg res" role="group" aria-label="Résultat de l'appel">${RES.map(([k,lb])=>`<button class="r-${k}" data-res="${k}" data-k="${esc(z.k)}" aria-pressed="${rr===k}">${lb}</button>`).join('')}</div></div></li>`}).join('')}</ul></div>`}).join('')||'<div class="empty pad">Aucun magasin à appeler pour ces produits.</div>'}</section>`}
 
 // actions cochées : table Supabase actions_done si elle existe, sinon cet appareil
@@ -685,7 +729,7 @@ function fromHash(){const h=location.hash.slice(1);st.page=PAGES[h]?h:'route';st
 window.addEventListener('hashchange',fromHash);
 function openFam(i){st.fam=+i;if(st.page!=='produits'){st.page='produits';history.replaceState(null,'','#produits')}render();window.scrollTo(0,0)}
 function saveRoute(){LS.set(routeKey(),getRoute())}
-document.addEventListener('click',e=>{const t=e.target.closest('[data-gcal],[data-dt],[data-callf],[data-newsess],[data-res],[data-resall],[data-sessback],[data-opensess],[data-createsess],[data-closesess],[data-reopensess],[data-atab],[data-more],[data-calrefresh],[data-pact],[data-setact],[data-fam],[data-back],[data-ptype],[data-color],[data-settype],[data-savepitch],[data-rmphoto],[data-photo],[data-rm],[data-copystop],[data-copyday],[data-addroute]');if(!t)return;const d=t.dataset;
+document.addEventListener('click',e=>{const t=e.target.closest('[data-gcal],[data-dt],[data-callf],[data-newsess],[data-slnew],[data-sllaunch],[data-res],[data-resall],[data-sessback],[data-opensess],[data-createsess],[data-closesess],[data-reopensess],[data-atab],[data-more],[data-calrefresh],[data-pact],[data-setact],[data-fam],[data-back],[data-ptype],[data-color],[data-settype],[data-savepitch],[data-rmphoto],[data-photo],[data-rm],[data-copystop],[data-copyday],[data-addroute]');if(!t)return;const d=t.dataset;
   if(d.pact!=null){st.pact=d.pact;render();return}
   if(d.setact!=null){saveSet(F[st.fam],{active:d.setact==='1'},d.setact==='1'?'Produit actif : il revient dans les recommandations':'Produit inactif : retiré des recommandations');return}
   if(d.fam!=null)return openFam(d.fam);
@@ -696,6 +740,13 @@ document.addEventListener('click',e=>{const t=e.target.closest('[data-gcal],[dat
     if(x)saveSess(x,false).then(render);else{LS.set('calls',a);render()}return}
   if(d.res){const cur=resOf(d.k);setResults([d.k],cur===d.res?null:d.res);return}
   if(d.resall){setResults(d.keys.split(';;').filter(k=>!isFin(k)),d.resall);return}
+  if(d.slnew!=null){st.sess='sl';render();window.scrollTo(0,0);return}
+  if(d.sllaunch!=null){const f=F.find(y=>fk(y)===st.slf);const qty=+st.slq;const p=slPlan(f,qty);const period=st.slp||'Prochaine';
+    (async()=>{if(!await saveSL({fam_key:fk(f),qty,period,created_by:ME.rep_name.split(' ')[0],created_at:new Date().toISOString()}))return;
+      const by={};p.stores.forEach(x=>{(by[x.s.rep]=by[x.s.rep]||{});by[x.s.rep][x.s.no]=x.c});
+      for(const [rep,plan] of Object.entries(by)){if(!IS_ADMIN&&rep!==ME.rep_name)continue;
+        const x={rep_name:rep,name:'Lancement SL : '+pname(f),products:[fk(f)],plan,created_by:ME.rep_name.split(' ')[0],created_at:new Date().toISOString(),closed_at:null};if(SESS_LOCAL)x.id=Date.now()+Math.random();await saveSess(x,true)}
+      toast('Lancement créé');st.sess=null;st.slf='';st.slq='';render();window.scrollTo(0,0)})();return}
   if(d.newsess!=null){st.sess='new';st.calls=[];st.sessName='';render();window.scrollTo(0,0);return}
   if(d.sessback!=null){st.sess=null;render();window.scrollTo(0,0);return}
   if(d.opensess!=null){st.sess=d.opensess;render();window.scrollTo(0,0);return}
@@ -717,8 +768,10 @@ document.addEventListener('click',e=>{const t=e.target.closest('[data-gcal],[dat
   if(d.copyday!=null)return copy(getRoute().stops.map(no=>stopText(S.find(s=>s.no===no))).join('\n\n'));
 });
 document.addEventListener('keydown',e=>{if(e.key==='Enter'&&e.target.matches('tr[data-fam]'))openFam(e.target.dataset.fam)});
-document.addEventListener('input',e=>{if(e.target.id==='sessname')st.sessName=e.target.value;if(e.target.id==='pq'){st.q=e.target.value;render(true)}if(e.target.id==='cq'){st.cq=e.target.value;render(true)}});
+document.addEventListener('input',e=>{if(e.target.id==='sessname')st.sessName=e.target.value;if(e.target.id==='slq'){st.slq=e.target.value;clearTimeout(st.slqt);st.slqt=setTimeout(()=>{render();const q=document.getElementById('slq');if(q){q.focus();q.setSelectionRange(q.value.length,q.value.length)}},400)}if(e.target.id==='pq'){st.q=e.target.value;render(true)}if(e.target.id==='cq'){st.cq=e.target.value;render(true)}});
 document.addEventListener('change',e=>{
+  if(e.target.matches&&e.target.matches('[data-slf]')){st.slf=e.target.value;render();return}
+  if(e.target.matches&&e.target.matches('[data-slp]')){st.slp=e.target.value;render();return}
   if(e.target.dataset&&e.target.dataset.act!=null){toggleDone(e.target.dataset.act,e.target.checked);return}
   if(e.target.matches&&e.target.matches('[data-dashrep]')){repSel.value=e.target.value;repSel.onchange();return}
   if(e.target.id==='addstore'&&e.target.value){const r=getRoute();r.stops.push(e.target.value);r.rm=r.rm.filter(n=>n!==e.target.value);saveRoute();render()}
@@ -728,7 +781,7 @@ document.addEventListener('change',e=>{
         if(error){toast('Photo non enregistrée : '+error.message);return}
         const url=SB.storage.from('product-photos').getPublicUrl(path).data.publicUrl;const p=photosOf(f);p.unshift(url);saveSet(f,{photos:p},'Photo ajoutée')},'image/jpeg',.82)};img.src=rd.result};rd.readAsDataURL(file)}
 });
-Promise.all([loadDone().catch(()=>{DONE_LOCAL=true}),loadSess().catch(()=>{SESS_LOCAL=true;SESS=LS.get('sessions',[])})]).finally(()=>{if(st.page==='dashboard'||st.page==='appels')render()});
+Promise.all([loadSL().catch(()=>{SLL_LOCAL=true;SLL=LS.get('sl',[])}),loadDone().catch(()=>{DONE_LOCAL=true}),loadSess().catch(()=>{SESS_LOCAL=true;SESS=LS.get('sessions',[])})]).finally(()=>{if(st.page==='dashboard'||st.page==='appels')render()});
 fromHash();
 }
 boot();
