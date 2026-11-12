@@ -124,6 +124,8 @@ ul.checks input:checked+.body .t{text-decoration:line-through;color:var(--muted)
 .chips{display:flex;flex-wrap:wrap;gap:6px}.pick{font:inherit;font-size:.8rem;padding:6px 10px;border-radius:99px;border:1px solid var(--line);background:var(--surface);color:var(--ink);cursor:pointer;display:inline-flex;gap:6px;align-items:center}.pick:hover{border-color:var(--accent)}.pick.on{background:var(--accent-soft);border-color:var(--accent);color:var(--accent);font-weight:600}
 .prog{height:6px;border-radius:3px;background:var(--sunk);overflow:hidden;margin-top:6px}.prog i{display:block;height:100%;background:var(--accent)}
 .agrp.fin{opacity:.6}input.txt{font:inherit;font-size:1rem;width:100%;max-width:480px;padding:10px 12px;border-radius:8px;border:1px solid var(--line);background:var(--surface);color:var(--ink)}
+.seg.res{margin-top:8px}.seg.res button{font-size:.76rem;padding:5px 10px}
+.seg.res .r-cmd[aria-pressed=true]{background:var(--good);border-color:var(--good);color:#fff}.seg.res .r-prom[aria-pressed=true]{background:var(--S);border-color:var(--S);color:#fff}.seg.res .r-non[aria-pressed=true]{background:var(--R);border-color:var(--R);color:#fff}.seg.res .r-nr[aria-pressed=true]{background:var(--P);border-color:var(--P);color:#fff}
 .dtbar button{font-size:.88rem!important;padding:8px 16px!important}
 .seg{display:flex;flex-wrap:wrap;gap:4px;align-items:center}
 .seg button{font:inherit;font-size:.78rem;font-weight:600;padding:6px 11px;border-radius:8px;border:1px solid var(--line);background:var(--surface);color:var(--muted);cursor:pointer}
@@ -505,8 +507,15 @@ const curProducts=()=>{const x=st.sess&&st.sess!=='new'?sessOf(st.sess):null;ret
 function sessRows(x){const ms=S.filter(s=>s.rep===x.rep_name&&!s.inactive);const sel=F.filter(f=>x.products.includes(fk(f)));
   return ms.map(s=>{const it=[];sel.forEach(f=>callOps(s,f).forEach(o=>it.push({o,f,k:'sess:'+x.id+'|'+s.no+'|'+fk(f)+'|'+o.t})));return {s,it,v:it.reduce((a,y)=>a+y.o.v,0)}})
     .filter(r=>r.it.length).sort((a,b)=>b.v-a.v||b.it.length-a.it.length)}
-function sessStats(x){const rows=sessRows(x);const items=rows.flatMap(r=>r.it);const done=items.filter(y=>DONE.get(y.k)).length;
-  const stores=rows.filter(r=>r.it.every(y=>DONE.get(y.k))).length;return {rows,items:items.length,done,stores,nStores:rows.length}}
+// résultat d'appel : cmd = commandé, prom = promesse de commande, non = pas commandé, nr = pas répondu (à rappeler)
+const RES=[['cmd','Commandé'],['prom','Promesse'],['non','Pas commandé'],['nr','Pas répondu']];
+const resOf=k=>{const d=DONE.get(k);return d?(d.r||'fait'):null};
+const isFin=k=>{const r=resOf(k);return !!r&&r!=='nr'};
+function sessStats(x){const rows=sessRows(x);const items=rows.flatMap(r=>r.it);const n={cmd:0,prom:0,non:0,nr:0,fait:0};items.forEach(y=>{const r=resOf(y.k);if(r)n[r]=(n[r]||0)+1});
+  const done=items.filter(y=>isFin(y.k)).length;const stores=rows.filter(r=>r.it.every(y=>isFin(y.k))).length;
+  return {rows,items:items.length,done,stores,nStores:rows.length,n,rate:(n.cmd+n.prom+n.non)?n.cmd/(n.cmd+n.prom+n.non):null}}
+const pctTxt=r=>r==null?'—':nf0.format(r*100)+' %';
+const resKpis=n=>`<div class="kpi"><span>Commandé</span><b style="color:var(--good)">${n.cmd}</b><span>appels</span></div><div class="kpi"><span>Promesse de commande</span><b style="color:var(--S)">${n.prom}</b><span>à surveiller</span></div><div class="kpi"><span>Pas commandé</span><b style="color:var(--R)">${n.non}</b><span>appels</span></div><div class="kpi"><span>Pas répondu</span><b style="color:var(--P)">${n.nr}</b><span>à rappeler</span></div>`;
 function productPicker(){const ms=myStores();const cur=curProducts();const sel=F.filter(f=>cur.includes(fk(f)));
   const q=(st.cq||'').normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase();
   const cand=F.filter(f=>isActive(f.i)&&(!st.dt||prodType(f)===st.dt)).map(f=>({f,n:ms.filter(s=>callOps(s,f).length).length}))
@@ -521,14 +530,15 @@ function callView(){
   if(st.sess==='new')return newSessView();
   if(st.sess&&sessOf(st.sess))return sessView(sessOf(st.sess));
   const mine=SESS.filter(x=>IS_ADMIN?x.rep_name===st.rep:x.rep_name===ME.rep_name);
-  const stats=mine.map(x=>({x,...sessStats(x)}));const open=stats.filter(y=>!y.x.closed_at);
+  const stats=mine.map(x=>({x,...sessStats(x)}));const open=stats.filter(y=>!y.x.closed_at);const tot={cmd:0,prom:0,non:0,nr:0};stats.forEach(y=>Object.keys(tot).forEach(k=>tot[k]+=y.n[k]||0));
   const m0=new Date();m0.setDate(1);m0.setHours(0,0,0,0);const month=stats.filter(y=>new Date(y.x.created_at)>=m0);
   const kpi=(lb,v,sub)=>`<div class="kpi"><span>${lb}</span><b>${v}</b><span>${sub}</span></div>`;
   const card=y=>{const pct=y.items?Math.round(y.done/y.items*100):0;return `<li><div class="body"><button class="lnk t" data-opensess="${y.x.id}">${esc(y.x.name)}</button> ${y.x.closed_at?'<span class="chip">Terminée</span>':'<span class="chip c-SA">En cours</span>'}
-    <div class="w">${fdate(y.x.created_at)}${y.x.created_by?' · par '+esc(y.x.created_by):''} · ${y.x.products.length} produit${y.x.products.length>1?'s':''} · ${y.stores}/${y.nStores} magasins terminés · ${y.done}/${y.items} appels faits</div>
+    <div class="w">${fdate(y.x.created_at)}${y.x.created_by?' · par '+esc(y.x.created_by):''} · ${y.x.products.length} produit${y.x.products.length>1?'s':''} · ${y.done}/${y.items} appels faits · ${y.n.cmd} commandé${y.n.cmd>1?'s':''}, ${y.n.prom} promesse${y.n.prom>1?'s':''}, ${y.n.non} pas commandé${y.n.non>1?'s':''}, ${y.n.nr} pas répondu · taux ${pctTxt(y.rate)}</div>
     <div class="prog"><i style="width:${pct}%"></i></div></div><button class="btn sm" data-opensess="${y.x.id}">Ouvrir</button></li>`};
-  return `<div class="head"><div><span class="eyebrow">Territoire de ${esc(st.rep)} · EZFocus période ${D.ref}</span><h1>Sessions d'appels</h1><p class="muted" style="margin:4px 0 0;max-width:72ch">Crée une session avec le ou les produits à vendre : l'outil sort les magasins à appeler, triés par caisses en jeu. Coche au fur et à mesure.</p></div><button class="btn primary" data-newsess>Nouvelle session</button></div>
-  <div class="kpis">${kpi('Sessions',mine.length,'au total')}${kpi('En cours',open.length,'à terminer')}${kpi('Ce mois-ci',month.length,'sessions créées')}${kpi('Appels faits',stats.reduce((a,y)=>a+y.done,0),'sur '+stats.reduce((a,y)=>a+y.items,0)+' prévus')}${kpi('Magasins terminés',stats.reduce((a,y)=>a+y.stores,0),'sur '+stats.reduce((a,y)=>a+y.nStores,0))}</div>
+  return `<div class="head"><div><span class="eyebrow">Territoire de ${esc(st.rep)} · EZFocus période ${D.ref}</span><h1>Sessions d'appels</h1><p class="muted" style="margin:4px 0 0;max-width:72ch">Crée une session avec le ou les produits à vendre : l'outil sort les magasins à appeler, triés par caisses en jeu. Note le résultat de chaque appel pour suivre tes stats.</p></div><button class="btn primary" data-newsess>Nouvelle session</button></div>
+  <div class="kpis">${kpi('Sessions',mine.length,'au total')}${kpi('En cours',open.length,'à terminer')}${kpi('Ce mois-ci',month.length,'sessions créées')}${kpi('Appels faits',stats.reduce((a,y)=>a+y.done,0),'sur '+stats.reduce((a,y)=>a+y.items,0)+' prévus')}${kpi('Taux de commande',pctTxt((()=>{const t=tot.cmd+tot.prom+tot.non;return t?tot.cmd/t:null})()),'commandés sur appels aboutis')}</div>
+  <div class="kpis">${resKpis(tot)}</div>
   ${SESS_LOCAL?'<p class="muted" style="font-size:.8rem;margin:0">Les sessions sont gardées sur cet appareil seulement tant que la table Supabase n\'est pas créée.</p>':''}
   <section class="panel"><div class="panel-h"><h2>Sessions</h2><span class="muted num">${mine.length}</span></div><ul class="acts">${stats.map(card).join('')||'<li class="empty">Aucune session pour l\'instant. Clique « Nouvelle session ».</li>'}</ul></section>`}
 function newSessView(){const n=st.calls.length;
@@ -539,23 +549,26 @@ function newSessView(){const n=st.calls.length;
 function sessView(x){const y=sessStats(x);const pct=y.items?Math.round(y.done/y.items*100):0;const txt=o=>{const t=CALLTXT[o.t];return typeof t==='function'?t(o):t};
   return `<div class="head"><div><span class="eyebrow">Session de ${esc(x.rep_name)} · créée le ${fdate(x.created_at)}${x.closed_at?' · terminée le '+fdate(x.closed_at):''}</span><h1>${esc(x.name)}</h1></div>
    <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn" data-sessback>Toutes les sessions</button>${x.closed_at?'<button class="btn" data-reopensess>Rouvrir</button>':'<button class="btn primary" data-closesess>Terminer la session</button>'}</div></div>
-  <div class="kpis"><div class="kpi"><span>Avancement</span><b>${pct} %</b><div class="prog"><i style="width:${pct}%"></i></div></div><div class="kpi"><span>Appels faits</span><b>${y.done}</b><span>sur ${y.items}</span></div><div class="kpi"><span>Magasins terminés</span><b>${y.stores}</b><span>sur ${y.nStores}</span></div><div class="kpi"><span>Caisses en jeu</span><b>${nf0.format(y.rows.reduce((a,r)=>a+r.v,0))}</b><span>cs/an sur la session</span></div></div>
+  <div class="kpis"><div class="kpi"><span>Avancement</span><b>${pct} %</b><div class="prog"><i style="width:${pct}%"></i></div></div><div class="kpi"><span>Appels faits</span><b>${y.done}</b><span>sur ${y.items}</span></div><div class="kpi"><span>Magasins terminés</span><b>${y.stores}</b><span>sur ${y.nStores}</span></div><div class="kpi"><span>Taux de commande</span><b>${pctTxt(y.rate)}</b><span>commandés sur appels aboutis</span></div></div>
+  <div class="kpis">${resKpis(y.n)}</div>
   <details class="panel"${x.products.length?'':' open'}><summary class="panel-h" style="cursor:pointer"><h2 style="display:inline">Produits de la session (${x.products.length})</h2></summary><div class="pad" style="display:flex;flex-direction:column;gap:12px">${productPicker()}</div></details>
-  <section class="panel"><div class="panel-h"><h2>Magasins à appeler</h2><span class="muted num">${y.nStores-y.stores} restants</span><p>Triés par caisses en jeu. Coche chaque produit une fois l'appel fait.</p></div>
-    ${y.rows.map(r=>{const fin=r.it.every(z=>DONE.get(z.k));return `<div class="agrp${fin?' fin':''}"><div class="agrp-h"><div><span class="t">${esc(r.s.n)}</span> <span class="muted" style="font-size:.78rem">${esc(r.s.v)} · n° ${r.s.no} · ${BAN[r.s.ban]||''} · ${r.s.days==null?'jamais visité':'visite il y a '+r.s.days+' j'}</span></div><span class="v" style="font:500 .78rem var(--f-mono)">${fin?'✓ terminé':money(r.v)}</span></div>
-      <ul class="checks">${r.it.map(z=>{const d=DONE.get(z.k);return `<li><label><input type="checkbox" data-act="${esc(z.k)}"${d?' checked':''}><span class="body"><span class="t">${esc(pname(z.f))}</span> ${typeChip(z.f)}<span class="w">${txt(z.o)}${d?` · fait${d.by?' par '+esc(d.by):''}`:''}</span></span></label>${z.o.v?`<span class="v">${money(z.o.v)}</span>`:''}</li>`}).join('')}</ul></div>`}).join('')||'<div class="empty pad">Aucun magasin à appeler pour ces produits.</div>'}</section>`}
+  <section class="panel"><div class="panel-h"><h2>Magasins à appeler</h2><span class="muted num">${y.nStores-y.stores} restants</span><p>Triés par caisses en jeu. Note le résultat de chaque produit. « Pas répondu » garde le magasin dans la liste pour le rappeler.</p></div>
+    ${y.rows.map(r=>{const fin=r.it.every(z=>isFin(z.k));return `<div class="agrp${fin?' fin':''}"><div class="agrp-h"><div><span class="t">${esc(r.s.n)}</span> <span class="muted" style="font-size:.78rem">${esc(r.s.v)} · n° ${r.s.no} · ${BAN[r.s.ban]||''} · ${r.s.days==null?'jamais visité':'visite il y a '+r.s.days+' j'}</span></div><div style="display:flex;gap:8px;align-items:center">${fin?'':`<button class="btn sm" data-resall="nr" data-keys="${esc(r.it.map(z=>z.k).join(';;'))}">Pas répondu</button>`}<span class="v" style="font:500 .78rem var(--f-mono)">${fin?'✓ terminé':money(r.v)}</span></div></div>
+      <ul class="checks">${r.it.map(z=>{const d=DONE.get(z.k),rr=resOf(z.k);return `<li><div class="body" style="flex:1;min-width:0"><span class="t">${esc(pname(z.f))}</span> ${typeChip(z.f)}<span class="w">${txt(z.o)}${z.o.v?' · '+money(z.o.v):''}${d?` · noté${d.by?' par '+esc(d.by):''} le ${new Date(d.at).toLocaleDateString('fr-CA',{day:'numeric',month:'short'})}`:''}</span>
+        <div class="seg res" role="group" aria-label="Résultat de l'appel">${RES.map(([k,lb])=>`<button class="r-${k}" data-res="${k}" data-k="${esc(z.k)}" aria-pressed="${rr===k}">${lb}</button>`).join('')}</div></div></li>`}).join('')}</ul></div>`}).join('')||'<div class="empty pad">Aucun magasin à appeler pour ces produits.</div>'}</section>`}
 
 // actions cochées : table Supabase actions_done si elle existe, sinon cet appareil
 let DONE=new Map(),DONE_LOCAL=false;
-async function loadDone(){const {data,error}=await SB.from('actions_done').select('k,done_by,done_at');
+async function loadDone(){const {data,error}=await SB.from('actions_done').select('*');
   if(error){DONE_LOCAL=true;DONE=new Map(Object.entries(LS.get('done',{})));return}
-  DONE=new Map((data||[]).map(r=>[r.k,{by:r.done_by,at:r.done_at}]))}
-async function toggleDone(k,on){const by=ME.rep_name.split(' ')[0],at=new Date().toISOString();
-  if(on)DONE.set(k,{by,at});else DONE.delete(k);
+  DONE=new Map((data||[]).map(r=>[r.k,{by:r.done_by,at:r.done_at,r:r.result||null}]))}
+const toggleDone=(k,on)=>setResults([k],on?'fait':null);
+async function setResults(keys,r){const by=ME.rep_name.split(' ')[0],at=new Date().toISOString();const prev=keys.map(k=>[k,DONE.get(k)]);
+  keys.forEach(k=>{if(r)DONE.set(k,{by,at,r});else DONE.delete(k)});
   if(DONE_LOCAL){LS.set('done',Object.fromEntries(DONE));return render()}
-  const rep=k.split('|')[1];const s=S.find(x=>x.no===rep);
-  const q=on?SB.from('actions_done').upsert({k,rep_name:s?s.rep:st.rep,done_by:by,done_at:at}):SB.from('actions_done').delete().eq('k',k);
-  const {error}=await q;if(error){toast('Non enregistré : '+error.message);if(on)DONE.delete(k);else DONE.set(k,{by,at})}else toast(on?'Action cochée':'Action décochée');render()}
+  const rows=keys.map(k=>{const s=S.find(x=>x.no===k.split('|')[1]);const row={k,rep_name:s?s.rep:st.rep,done_by:by,done_at:at};if(r&&r!=='fait')row.result=r;return row});
+  const {error}=r?await SB.from('actions_done').upsert(rows):await SB.from('actions_done').delete().in('k',keys);
+  if(error){toast('Non enregistré : '+error.message);prev.forEach(([k,v])=>v?DONE.set(k,v):DONE.delete(k))}else toast(r?(RES.find(x=>x[0]===r)||['','Action cochée'])[1]:'Retiré');render()}
 
 // Analyse des pertes : retraits de planogramme (pas de notre faute) vs pertes sur notre terrain
 const LOST=(D.lost||[]).map(l=>({s:l[0],f:l[1],t13:l[2]}));
@@ -672,7 +685,7 @@ function fromHash(){const h=location.hash.slice(1);st.page=PAGES[h]?h:'route';st
 window.addEventListener('hashchange',fromHash);
 function openFam(i){st.fam=+i;if(st.page!=='produits'){st.page='produits';history.replaceState(null,'','#produits')}render();window.scrollTo(0,0)}
 function saveRoute(){LS.set(routeKey(),getRoute())}
-document.addEventListener('click',e=>{const t=e.target.closest('[data-gcal],[data-dt],[data-callf],[data-newsess],[data-sessback],[data-opensess],[data-createsess],[data-closesess],[data-reopensess],[data-atab],[data-more],[data-calrefresh],[data-pact],[data-setact],[data-fam],[data-back],[data-ptype],[data-color],[data-settype],[data-savepitch],[data-rmphoto],[data-photo],[data-rm],[data-copystop],[data-copyday],[data-addroute]');if(!t)return;const d=t.dataset;
+document.addEventListener('click',e=>{const t=e.target.closest('[data-gcal],[data-dt],[data-callf],[data-newsess],[data-res],[data-resall],[data-sessback],[data-opensess],[data-createsess],[data-closesess],[data-reopensess],[data-atab],[data-more],[data-calrefresh],[data-pact],[data-setact],[data-fam],[data-back],[data-ptype],[data-color],[data-settype],[data-savepitch],[data-rmphoto],[data-photo],[data-rm],[data-copystop],[data-copyday],[data-addroute]');if(!t)return;const d=t.dataset;
   if(d.pact!=null){st.pact=d.pact;render();return}
   if(d.setact!=null){saveSet(F[st.fam],{active:d.setact==='1'},d.setact==='1'?'Produit actif : il revient dans les recommandations':'Produit inactif : retiré des recommandations');return}
   if(d.fam!=null)return openFam(d.fam);
@@ -681,6 +694,8 @@ document.addEventListener('click',e=>{const t=e.target.closest('[data-gcal],[dat
   if(d.dt!=null){st.dt=d.dt;st.more=0;LS.set('dt',d.dt);render();return}
   if(d.callf!=null){const k=fk(F[+d.callf]);const x=st.sess&&st.sess!=='new'?sessOf(st.sess):null;const a=x?x.products:st.calls;const i=a.indexOf(k);if(i>=0)a.splice(i,1);else a.push(k);
     if(x)saveSess(x,false).then(render);else{LS.set('calls',a);render()}return}
+  if(d.res){const cur=resOf(d.k);setResults([d.k],cur===d.res?null:d.res);return}
+  if(d.resall){setResults(d.keys.split(';;').filter(k=>!isFin(k)),d.resall);return}
   if(d.newsess!=null){st.sess='new';st.calls=[];st.sessName='';render();window.scrollTo(0,0);return}
   if(d.sessback!=null){st.sess=null;render();window.scrollTo(0,0);return}
   if(d.opensess!=null){st.sess=d.opensess;render();window.scrollTo(0,0);return}

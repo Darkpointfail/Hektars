@@ -6,6 +6,7 @@ create table if not exists public.actions_done(
   done_by text,
   done_at timestamptz not null default now()
 );
+alter table public.actions_done add column if not exists result text; -- commandé / promesse / pas commandé / pas répondu
 alter table public.actions_done enable row level security;
 drop policy if exists ad_read on public.actions_done;
 drop policy if exists ad_write on public.actions_done;
