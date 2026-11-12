@@ -162,6 +162,7 @@ svg.chart text.v{fill:var(--ink);font-weight:600}
 code.bm{display:block;font:12px/1.45 var(--f-mono);background:var(--sunk);padding:10px 12px;border-radius:8px;overflow-x:auto;white-space:nowrap}
 .steps{margin:0 0 10px;padding-left:20px;display:grid;gap:10px}.steps .btn{margin-left:6px}
 .calko{margin:6px 0 0;padding-left:18px;font-size:.84rem;display:grid;gap:3px}
+.stl{margin-top:4px}.stl summary{font-size:.76rem;color:var(--accent);cursor:pointer}.stl .w{margin-top:4px}
 .lossbar{display:flex;height:10px;border-radius:5px;overflow:hidden;background:var(--sunk);margin-bottom:10px}.lossbar i{display:block;height:100%}
 .lossl{list-style:none;margin:0 0 8px;padding:0;display:grid;gap:6px;font-size:.85rem}.lossl li{display:grid;grid-template-columns:auto 1fr auto;gap:8px;align-items:center}
 [hidden]{display:none!important}
@@ -431,32 +432,50 @@ function stopCard(s,time){const g=goals(s);const g13=gr(s.t13,s.l13);
 function stopText(s){const g=goals(s);let t=`${s.n} (${s.no})\n`;[['O','OBL à remettre'],['L','OBL stock faible'],['R','Faire recommander'],['P','Inscriptions perdues'],['A','Proposer'],['S','Pousser']].forEach(([k,l])=>{if(g[k].length){t+=`\n${l.toUpperCase()}\n`;g[k].forEach(o=>t+=`- ${pname(F[o.f])} (${F[o.f].codes[0]}) : ${why(o)}\n`)}});return t}
 
 // ---------- Dashboard ----------
-function dashView(){const ms=myStores();
+function dashView(){const ms=myStores();const ri=D.reps.indexOf(st.rep);
   const ops=[];ms.forEach(s=>byStore[s.i].forEach(o=>ops.push(o)));
-  const isRA=o=>prodType(F[o.f])==='RA',isSA=o=>prodType(F[o.f])==='SA';
-  const OB=ops.filter(o=>o.t==='O'&&isRA(o)).sort((a,b)=>b.v-a.v),LO=ops.filter(o=>o.t==='L'&&isRA(o)).sort((a,b)=>a.inv-b.inv||b.v-a.v);
-  const SA=ops.filter(o=>o.t==='P'&&isSA(o)).sort((a,b)=>b.v-a.v);
-  const t13=ms.reduce((a,s)=>a+s.t13,0),l13=ms.reduce((a,s)=>a+s.l13,0);
+  const ty=o=>prodType(F[o.f]);
+  const OB=ops.filter(o=>(o.t==='O'||o.t==='L')&&ty(o)==='RA').sort((a,b)=>(a.t==='O'?0:1)-(b.t==='O'?0:1)||a.inv-b.inv||b.v-a.v);
+  const SAP=ops.filter(o=>o.t==='P'&&ty(o)==='SA'),SAA=ops.filter(o=>o.t==='A'&&ty(o)==='SA');
+  const sum=(a,k)=>a.reduce((x,o)=>x+(typeof k==='function'?k(o):o[k]),0);
+  const t13=sum(ms,'t13'),l13=sum(ms,'l13'),t3=sum(ms,'t3'),l3=sum(ms,'l3');
+  const pt=Array(13).fill(0),pl=Array(13).fill(0);ms.forEach(s=>{for(let k=0;k<13;k++){pt[k]+=s.pt[k]||0;pl[k]+=s.pl[k]||0}});
   const nObl=ms.reduce((a,s)=>a+[...OBLSET[s.i]].filter(f=>isActive(f)&&prodType(F[f])==='RA').length,0);
-  const late=ms.filter(s=>s.days==null||s.days>60).sort((a,b)=>b.pot-a.pot);
-  const gap={};ops.filter(o=>o.t==='A').forEach(o=>{(gap[o.f]=gap[o.f]||{n:0,v:0});gap[o.f].n++;gap[o.f].v+=o.v});
-  const gaps=Object.entries(gap).map(([f,g])=>({f:F[f],...g})).sort((a,b)=>b.n-a.n||b.v-a.v).slice(0,8);
-  const row=o=>{const s=S[o.s],f=F[o.f];return `<li><span class="dot" style="background:var(--${o.t})"></span><div class="body"><button class="lnk t" data-fam="${f.i}">${esc(pname(f))}</button><div class="w">${esc(s.n)} · ${why(o)}</div></div><span class="v">${money(o.v)}</span></li>`};
-  const obl=[...OB,...LO];
-  return `<div class="head"><div><span class="eyebrow">Territoire de ${esc(st.rep)} · ${ms.length} magasins · données extraites le ${dataDate}</span><h1>Actions urgentes</h1></div></div>
+  const late=ms.filter(s=>s.days==null||s.days>60);
+  // magasins prioritaires : caisses en jeu = baisse sur 3 périodes (annualisée) + SA perdus + OBL RA à corriger
+  const pri=ms.map(s=>{const sp=SAP.filter(o=>o.s===s.i),ob=OB.filter(o=>o.s===s.i);const drop=Math.max(0,(s.l3-s.t3)*13/3);
+    return {s,sp,ob,drop,score:drop+sum(sp,'v')+sum(ob,'v')}}).filter(x=>x.score>0).sort((a,b)=>b.score-a.score);
+  // moteurs et freins : variation des ventes par produit sur ton territoire
+  const mv=F.filter(f=>isActive(f.i)).map(f=>{const r=famSeries(f.i,ri<0?null:ri);const a=r.t.reduce((x,y)=>x+y,0),b=r.l.reduce((x,y)=>x+y,0);return {f,a,b,d:a-b}}).filter(x=>x.a+x.b>0);
+  const up=[...mv].sort((a,b)=>b.d-a.d).filter(x=>x.d>0).slice(0,6),down=[...mv].sort((a,b)=>a.d-b.d).filter(x=>x.d<0).slice(0,6);
+  const byProd=list=>{const g={};list.forEach(o=>{(g[o.f]=g[o.f]||{f:F[o.f],n:0,v:0,st:[]});g[o.f].n++;g[o.f].v+=o.v;g[o.f].st.push(o)});return Object.values(g).sort((a,b)=>b.v-a.v)};
+  const saLost=byProd(SAP),saPlace=byProd(SAA).sort((a,b)=>b.n-a.n||b.v-a.v);
+  const kpi=(l,v,sub,al)=>`<div class="kpi${al?' alert':''}"><span>${l}</span><b>${v}</b><span>${sub}</span></div>`;
+  const prodRow=(g,txt)=>`<li><span class="colorsw" style="background:${COLORS[g.f.color]};margin-top:6px"></span><div class="body"><button class="lnk t" data-fam="${g.f.i}">${esc(pname(g.f))}</button><div class="w">${txt}</div>
+    <details class="stl"><summary>Voir les magasins</summary><div class="w">${g.st.sort((a,b)=>b.v-a.v).map(o=>`${esc(S[o.s].n)} (${cs(o.v)} cs/an)`).join(' · ')}</div></details></div><span class="v">${money(g.v)}</span></li>`;
+  const mvRow=x=>`<li><span class="colorsw" style="background:${COLORS[x.f.color]};margin-top:6px"></span><div class="body"><button class="lnk t" data-fam="${x.f.i}">${esc(pname(x.f))}</button> ${typeChip(x.f)}<div class="w">${cs(x.a)} cs sur 13 périodes, contre ${cs(x.b)} l'an passé</div></div><span class="v">${x.d>0?'+':'−'}${cs(Math.abs(x.d))} cs</span></li>`;
+  return `<div class="head"><div><span class="eyebrow">Territoire de ${esc(st.rep)} · ${ms.length} magasins actifs · EZFocus période ${D.ref}, extrait le ${dataDate}</span><h1>Tableau de bord</h1></div></div>
   <div class="kpis">
-    <div class="kpi"><span>Ventes R13</span><b>${nf0.format(t13)} cs</b><span>${pctH(gr(t13,l13))} vs an passé</span></div>
-    <div class="kpi${OB.length?' alert':''}"><span>OBL RA sans stock</span><b>${OB.length}</b><span>sur ${nf0.format(nObl)} OBL RA dans tes magasins</span></div>
-    <div class="kpi${LO.length?' alert':''}"><span>OBL RA stock faible</span><b>${LO.length}</b><span>6 unités ou moins</span></div>
-    <div class="kpi${SA.length?' alert':''}"><span>Pertes de distribution SA</span><b>${SA.length}</b><span>${money(SA.reduce((a,o)=>a+o.v,0))} en jeu</span></div>
-    <div class="kpi"><span>Magasins sans visite 60 j +</span><b>${late.length}</b><span>sur ${ms.length}</span></div>
+    ${kpi('Ventes 13 périodes',nf0.format(t13)+' cs',pctH(gr(t13,l13))+' vs an passé')}
+    ${kpi('Tendance 3 périodes',nf0.format(t3)+' cs',pctH(gr(t3,l3))+' vs an passé',t3<l3)}
+    ${kpi('OBL RA à corriger',OB.length,`sans stock ou 6 unités et moins, sur ${nf0.format(nObl)}`,OB.length>0)}
+    ${kpi('Pertes de distribution SA',SAP.length,money(sum(SAP,'v'))+' en jeu',SAP.length>0)}
+    ${kpi('Magasins sans visite 60 j +',late.length,'sur '+ms.length)}
   </div>
+  <section class="panel"><div class="panel-h"><h2>Ventes du territoire par période</h2><p>Caisses vendues dans tes magasins, cette année (ligne pleine) et l'an passé (pointillé).</p></div><div class="pad">${lineChart(pt,pl,'Ventes du territoire par période (cs)',true)}</div></section>
+  <section class="panel"><div class="panel-h"><h2>Magasins prioritaires</h2><span class="muted num">${pri.length}</span><p>Triés par caisses en jeu : baisse des 3 dernières périodes ramenée à l'année, SA perdus et OBL RA à corriger.</p></div>
+    <ul class="acts">${pri.slice(0,10).map(x=>{const s=x.s,why=[];if(x.drop>0)why.push(`−${cs(s.l3-s.t3)} cs sur 3 périodes vs an passé`);if(x.sp.length)why.push(`${x.sp.length} SA perdu${x.sp.length>1?'s':''}`);if(x.ob.length)why.push(`${x.ob.length} OBL RA à corriger`);why.push(s.days==null?'jamais visité':'visite il y a '+s.days+' j');
+      return `<li><span class="dot" style="background:var(--${s.days==null||s.days>60?'R':'P'})"></span><div class="body"><span class="t">${esc(s.n)}</span> <span class="muted" style="font-size:.78rem">${esc(s.v)} · n° ${s.no}</span><div class="w">${why.join(' · ')}</div></div><span class="v">${money(x.score)}</span><button class="btn sm" data-addroute="${s.no}">+ Journée</button></li>`}).join('')||'<li class="empty">Aucun magasin à risque.</li>'}</ul></section>
   <div class="grid2">
-    <section class="panel"><div class="panel-h"><h2>OBL RA sans stock ou en stock faible</h2><span class="muted num">${obl.length}</span><p>Produits RA au planogramme : sans stock d'abord, puis 6 unités ou moins.</p></div><ul class="acts">${obl.slice(0,15).map(row).join('')||'<li class="empty">Tous les OBL RA ont du stock.</li>'}</ul></section>
-    <section class="panel"><div class="panel-h"><h2>Pertes de distribution SA</h2><span class="muted num">${SA.length}</span><p>Produits SA qui se vendaient dans le magasin et n'y sont plus (ni ventes ni stock depuis 3 périodes).</p></div><ul class="acts">${SA.slice(0,15).map(row).join('')||'<li class="empty">Aucune perte SA.</li>'}</ul></section>
-    <section class="panel"><div class="panel-h"><h2>Produits trop peu distribués</h2><p>Absents de tes magasins alors que la majorité des magasins comparables les vendent.</p></div><ul class="acts">${gaps.map(g=>`<li><span class="colorsw" style="background:${COLORS[g.f.color]};margin-top:6px"></span><div class="body"><button class="lnk t" data-fam="${g.f.i}">${esc(pname(g.f))}</button><div class="w">Manque dans ${g.n} de tes magasins</div></div><span class="v">${money(g.v)}</span></li>`).join('')||'<li class="empty">Aucun.</li>'}</ul></section>
+    <section class="panel"><div class="panel-h"><h2>Pertes de distribution SA</h2><span class="muted num">${SAP.length}</span><p>Produits SA qui se vendaient et ne sont plus dans le magasin (ni ventes ni stock depuis 3 périodes). Regroupés par produit pour une relance ciblée.</p></div>
+      <ul class="acts">${saLost.slice(0,10).map(g=>prodRow(g,`Perdu dans ${g.n} magasin${g.n>1?'s':''}`)).join('')||'<li class="empty">Aucune perte SA.</li>'}</ul></section>
+    <section class="panel"><div class="panel-h"><h2>OBL RA à corriger</h2><span class="muted num">${OB.length}</span><p>Produits RA au planogramme, sans stock d'abord, puis 6 unités ou moins. À signaler au gérant.</p></div>
+      <ul class="acts">${OB.slice(0,10).map(o=>`<li><span class="dot" style="background:var(--${o.t})"></span><div class="body"><button class="lnk t" data-fam="${o.f}">${esc(pname(F[o.f]))}</button><div class="w">${esc(S[o.s].n)} · ${o.t==='O'?'aucun stock':nf0.format(o.inv)+' unité'+(o.inv>1?'s':'')+' en stock'}</div></div><span class="v">${money(o.v)}</span></li>`).join('')||`<li class="empty">Les ${nf0.format(nObl)} OBL RA ont du stock.</li>`}</ul></section>
+    <section class="panel"><div class="panel-h"><h2>Moteurs</h2><p>Produits qui gagnent le plus de caisses sur ton territoire (13 périodes vs an passé).</p></div><ul class="acts">${up.map(mvRow).join('')||'<li class="empty">Aucun.</li>'}</ul></section>
+    <section class="panel"><div class="panel-h"><h2>Freins</h2><p>Produits qui perdent le plus de caisses sur ton territoire (13 périodes vs an passé).</p></div><ul class="acts">${down.map(mvRow).join('')||'<li class="empty">Aucun.</li>'}</ul></section>
+    <section class="panel"><div class="panel-h"><h2>SA à placer</h2><p>Produits SA absents de tes magasins alors que la majorité des magasins comparables les vendent.</p></div>
+      <ul class="acts">${saPlace.slice(0,8).map(g=>prodRow(g,`À placer dans ${g.n} magasin${g.n>1?'s':''}`)).join('')||'<li class="empty">Aucun.</li>'}</ul></section>
     ${lossPanel(ms)}
-    <section class="panel"><div class="panel-h"><h2>Magasins à revoir</h2><p>Pas de visite inscrite dans EZFocus depuis plus de 60 jours, triés par potentiel.</p></div><ul class="acts">${late.slice(0,8).map(s=>`<li><span class="dot" style="background:var(--${s.days==null||s.days>120?'R':'P'})"></span><div class="body"><span class="t">${esc(s.n)}</span><div class="w">${esc(s.v)} · ${s.days==null?'jamais visité':s.days+' jours'}</div></div><button class="btn sm" data-addroute="${s.no}">+ Journée</button></li>`).join('')||'<li class="empty">Tous visités récemment.</li>'}</ul></section>
   </div>`}
 
 // Analyse des pertes : retraits de planogramme (pas de notre faute) vs pertes sur notre terrain
