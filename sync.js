@@ -43,7 +43,7 @@
       }
       done++; say(`lecture des produits… ${done}/${stores.length} magasins`);
     }
-    await Promise.all(Array.from({ length: 5 }, async () => { while (i < stores.length) await one(stores[i++]); }));
+    await Promise.all(Array.from({ length: 2 }, async () => { while (i < stores.length) { await one(stores[i++]); await new Promise(r => setTimeout(r, 400)); } }));
     say('calcul des signaux…');
     // familles = nom + format
     const famKey = {}, F = [];
