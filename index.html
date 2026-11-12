@@ -1,4 +1,6 @@
 <title>Hektars Terrain</title>
+<link rel="icon" type="image/png" href="img/favicon-32.png">
+<link rel="apple-touch-icon" href="img/apple-touch-icon.png">
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@600;700;800&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@500&display=swap">
@@ -38,8 +40,8 @@ h1{font-size:1.6rem;line-height:1.15;font-weight:800} h2{font-size:1.02rem} h3{f
 .app{display:grid;grid-template-columns:236px minmax(0,1fr);min-height:100%}
 .side{background:var(--side);color:var(--side-ink);position:sticky;top:env(safe-area-inset-top,0px);height:calc(100vh - env(safe-area-inset-top,0px));display:flex;flex-direction:column;gap:22px;padding:22px 14px 18px max(14px,env(safe-area-inset-left,0px))}
 .brand{display:flex;align-items:center;gap:10px;padding:0 8px}
-.mark{width:34px;height:34px;border-radius:9px;background:var(--accent);display:grid;place-items:center;flex:none}
-.mark svg{width:18px;height:18px}
+.mark{height:34px;padding:0 7px;border-radius:9px;background:#fff;display:grid;place-items:center;flex:none}
+.mark img{height:22px;width:auto;display:block}
 .brand b{font-family:var(--f-display);font-weight:800;font-size:1.08rem;letter-spacing:-.01em;display:block;line-height:1.1}
 .brand small{font-size:.72rem;color:var(--side-muted)}
 nav.tabs{display:flex;flex-direction:column;gap:2px}
@@ -153,7 +155,7 @@ svg.chart text.v{fill:var(--ink);font-weight:600}
 }
 .gate .side nav,.gate .side-foot{visibility:hidden}
 .gatebox{max-width:420px;margin:12vh auto 0;display:flex;flex-direction:column;gap:14px;align-items:flex-start}
-.mark.big{width:52px;height:52px;border-radius:14px}.mark.big svg{width:26px;height:26px}
+.gate-logo{width:220px;max-width:70%;height:auto;background:#fff;border-radius:14px;padding:14px 18px;box-sizing:content-box;border:1px solid var(--line,#e6dfe2)}
 .gate-err{color:var(--bad);font-size:.88rem;margin:0}
 .signout{background:none;border:0;color:var(--side-muted);font:inherit;font-size:.74rem;text-align:left;padding:0 8px;cursor:pointer}
 .signout:hover{color:var(--side-ink)}
@@ -170,7 +172,7 @@ code.bm{display:block;font:12px/1.45 var(--f-mono);background:var(--sunk);paddin
 
 <div class="app">
 <aside class="side">
-  <div class="brand"><span class="mark"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round"><path d="M7 3h10l-.5 6a4.5 4.5 0 0 1-9 0L7 3z"/><path d="M12 13.5V20M8.5 21h7"/></svg></span><span><b>Hektars</b><small>Terrain</small></span></div>
+  <div class="brand"><span class="mark"><img src="img/mark.png" alt=""></span><span><b>Hektars</b><small>Terrain</small></span></div>
   <nav class="tabs" aria-label="Pages">
     <a href="#route" data-p="route"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21s-7-6.2-7-12a7 7 0 0 1 14 0c0 5.8-7 12-7 12z"/><circle cx="12" cy="9" r="2.5"/></svg>Sur la route</a>
     <a href="#dashboard" data-p="dashboard"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg>Dashboard</a>
@@ -205,7 +207,7 @@ window.hkSignOut=async()=>{try{sessionStorage.removeItem('hk-gtoken')}catch(e){}
 const USE_GOOGLE=false; // connexion Google et agenda : désactivés pour l'instant
 const LOGIN_DOMAIN='hektars-terrain.app';
 const loginEmail=id=>{id=String(id||'').trim().toLowerCase();return id.includes('@')?id:id.normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9.-]/g,'')+'@'+LOGIN_DOMAIN};
-function loginScreen(msg){screen(`<span class="mark big"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round"><path d="M7 3h10l-.5 6a4.5 4.5 0 0 1-9 0L7 3z"/><path d="M12 13.5V20M8.5 21h7"/></svg></span>
+function loginScreen(msg){screen(`<img class="gate-logo" src="img/logo.png" alt="Hektars">
   <h1>Hektars Terrain</h1><p class="muted">Connecte-toi avec ton identifiant et ton mot de passe.</p>${msg?`<p class="gate-err">${msg}</p>`:''}
   <form id="loginf" class="loginf"><label>Identifiant<input id="lid" autocomplete="username" autocapitalize="none" required placeholder="ton prénom"></label>
   <label>Mot de passe<input id="lpw" type="password" autocomplete="current-password" required></label>
