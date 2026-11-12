@@ -79,6 +79,7 @@
         const p25 = qt(sell, .25), p50 = qt(sell, .5), np = sell.length;
         const push = (t, v) => O.push([si, f, t, R(g.t13), R(g.l13), R(g.t3), R(g.l3), Math.round(g.inv), R(p25), R(p50), np, R(v)]);
         if (g.obl && g.inv <= 0) return push('O', Math.max(g.t13, g.l13));
+        if (g.obl && g.inv > 0 && g.inv <= 6) return push('L', Math.max(g.t13, g.l13));
         if (x.type === 'Spec Lot') return;
         if (g.t3 > 0.05 && g.inv <= 0) return push('R', g.t13);
         if (Math.max(g.t13, g.l13) >= 3 && g.t3 <= 0 && g.inv <= 0) return push('P', Math.max(g.t13, g.l13));
