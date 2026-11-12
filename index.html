@@ -540,7 +540,7 @@ function slLaunches(){return F.filter(f=>prodType(f)==='SL'&&f.nT13>0).map(f=>{c
     const sold=Math.max(t[k]+.5*(t[k+1]||0),k+2<13?t[k+1]+.5*t[k+2]:0);return {f,k,sold,stores:f.nT13,rate:sold/f.nT13}}).filter(Boolean)}
 function slBench(f){const all=slLaunches().filter(x=>x.f!==f);let cmp=all.filter(x=>x.f.color===f.color&&x.f.px>=f.px*.6&&x.f.px<=f.px*1.6);let basis='même couleur, prix comparable';
   if(cmp.length<3){cmp=all;basis='tous les SL lancés sur la période'}const r=cmp.map(x=>x.rate).sort((a,b)=>a-b);const med=r.length?r[Math.floor((r.length-1)/2)]:null;return {cmp,med,basis}}
-function slPlan(f,qty){const b=slBench(f);if(!b.med||!qty)return {b,stores:[],need:0};const need=Math.ceil(qty*.8/b.med);
+function slPlan(f,qty){const b=slBench(f);if(!b.med||!qty)return {b,stores:[],need:0};const need=Math.min(Math.ceil(qty*.8/b.med),Math.floor(qty));
   const act=S.filter(s=>!s.inactive&&s.t3>0);const max=act.length*b.med/.8;
   const pool=act.sort((a,b)=>b.t3-a.t3).slice(0,need);const w=pool.reduce((a,s)=>a+s.t3,0);
   let alloc=pool.map(s=>({s,c:Math.max(1,Math.floor(qty*s.t3/w))}));let left=qty-alloc.reduce((a,x)=>a+x.c,0);
