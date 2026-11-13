@@ -216,6 +216,7 @@ code.bm{display:block;font:12px/1.45 var(--f-mono);background:var(--sunk);paddin
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js" integrity="sha384-0w2KAL2YHP6wKOkUDzkCDGgVvfmHnj02DHeQ6XcHOgTfFsGyonKOpShMH1x6nk9o" crossorigin="anonymous"></script>
 <script src="config.js"></script>
+<script>window.addEventListener('unhandledrejection',e=>{try{const v=document.getElementById('view');const r=e.reason;if(v&&!v.innerHTML.trim())v.innerHTML='<div class="panel pad" style="border-color:#c33"><b>Erreur au chargement.</b> Envoie une capture de ce message à Claude.<pre style="white-space:pre-wrap;font-size:.75rem">'+String(r&&r.stack||r).split('\n').slice(0,3).join('\n')+'</pre></div>'}catch(_){}});window.addEventListener('error',e=>{try{const v=document.getElementById('view');if(v&&!v.innerHTML.trim())v.innerHTML='<div class="panel pad" style="border-color:#c33"><b>Erreur au chargement.</b> Envoie une capture de ce message à Claude.<pre style="white-space:pre-wrap;font-size:.75rem">'+String(e.message||'')+' (ligne '+e.lineno+')</pre></div>'}catch(_){}});</script>
 <script>
 // ---------- Connexion, chargement des données, synchronisation ----------
 const SB=supabase.createClient(HK_CONFIG.url,HK_CONFIG.anonKey,{auth:{persistSession:true,detectSessionInUrl:true,flowType:'pkce'}});
@@ -1088,7 +1089,8 @@ function synchroView(){if(!IS_ADMIN)return '<div class="panel empty">Réservé �
 const PAGES={aujourdhui:todayView,appels:callView,suivisl:slSuiviView,degust:tastView,emailing:emailingView,produits:prodsView,brief:briefView,synchro:synchroView};
 function render(keepFocus){document.getElementById('avatar').textContent=st.rep.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();document.querySelectorAll('nav.tabs a').forEach(a=>a.toggleAttribute('aria-current',a.dataset.p===st.page)||a.dataset.p===st.page&&a.setAttribute('aria-current','page'));
   document.querySelectorAll('nav.tabs a').forEach(a=>{if(a.dataset.p===st.page)a.setAttribute('aria-current','page');else a.removeAttribute('aria-current')});
-  document.getElementById('view').innerHTML=PAGES[st.page]();
+  let html;try{html=PAGES[st.page]()}catch(err){console.error(err);html=`<div class="panel pad" style="border-color:var(--R)"><b>Cette page n'a pas pu s'afficher.</b><p class="muted" style="margin:6px 0">Envoie une capture de ce message à Claude pour qu'il corrige.</p><pre style="white-space:pre-wrap;font-size:.75rem;margin:0">${esc(String(err&&err.stack||err).split('\n').slice(0,4).join('\n'))}</pre><p style="margin:10px 0 0"><a class="btn sm" href="#aujourdhui">Aller à Aujourd'hui</a></p></div>`}
+  document.getElementById('view').innerHTML=html;
   const cq=document.getElementById('cq');if(cq&&keepFocus){cq.focus();cq.setSelectionRange(cq.value.length,cq.value.length)}
   const tq=document.getElementById('tq');if(tq&&keepFocus){tq.focus();tq.setSelectionRange(tq.value.length,tq.value.length)}
   const pq=document.getElementById('pq');if(pq&&keepFocus){pq.focus();pq.setSelectionRange(pq.value.length,pq.value.length)}}
