@@ -130,7 +130,7 @@ ul.checks input:checked+.body .t{text-decoration:line-through;color:var(--muted)
 .agrp.fin{opacity:.6}textarea.txt{resize:vertical;font-family:inherit}input.txt,textarea.txt{font:inherit;font-size:1rem;width:100%;max-width:480px;padding:10px 12px;border-radius:8px;border:1px solid var(--line);background:var(--surface);color:var(--ink)}
 .seg.res{margin-top:8px}.seg.res button{font-size:.76rem;padding:5px 10px}
 .seg.res .r-cmd[aria-pressed=true]{background:var(--good);border-color:var(--good);color:#fff}.seg.res .r-prom[aria-pressed=true]{background:var(--S);border-color:var(--S);color:#fff}.seg.res .r-non[aria-pressed=true]{background:var(--R);border-color:var(--R);color:#fff}.seg.res .r-nr[aria-pressed=true]{background:var(--P);border-color:var(--P);color:#fff}
-.slform{display:flex;flex-wrap:wrap;gap:14px}.slform>label{flex:1 1 180px}.slstats{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px;margin:8px 0}.slstats>div{background:var(--sunk);border-radius:8px;padding:8px 10px;display:flex;flex-direction:column;gap:2px}.slstats span{font-size:.7rem;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);font-weight:600}.slstats b{font-size:1.1rem}.slstats em{font-style:normal;font-size:.72rem;color:var(--muted)}.slform label{display:flex;flex-direction:column;gap:6px;font-size:.78rem;font-weight:600;color:var(--muted)}.slform select,.slform input{font:inherit;font-size:.95rem;padding:9px 10px;border-radius:8px;border:1px solid var(--line);background:var(--surface);color:var(--ink);min-width:200px}
+.slform{display:flex;flex-wrap:wrap;gap:14px}.slform>label{flex:1 1 180px}input.cell,select.cell{font:inherit;font-size:.84rem;padding:5px 7px;border:1px solid transparent;border-radius:6px;background:transparent;color:var(--ink);max-width:180px}input.cell:hover,select.cell:hover,input.cell:focus,select.cell:focus{border-color:var(--line);background:var(--surface)}div.camp-act>.btn{flex:0 0 auto;width:auto;text-decoration:none}select.sel{font:inherit;font-size:.9rem;padding:8px 10px;border-radius:8px;border:1px solid var(--line);background:var(--surface);color:var(--ink)}.slstats{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px;margin:8px 0}.slstats>div{background:var(--sunk);border-radius:8px;padding:8px 10px;display:flex;flex-direction:column;gap:2px}.slstats span{font-size:.7rem;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);font-weight:600}.slstats b{font-size:1.1rem}.slstats em{font-style:normal;font-size:.72rem;color:var(--muted)}.slform label{display:flex;flex-direction:column;gap:6px;font-size:.78rem;font-weight:600;color:var(--muted)}.slform select,.slform input{font:inherit;font-size:.95rem;padding:9px 10px;border-radius:8px;border:1px solid var(--line);background:var(--surface);color:var(--ink);min-width:200px}
 .slt{font-size:.86rem}.slt-h,.slr summary{display:grid;grid-template-columns:minmax(0,2.4fr) repeat(3,minmax(64px,1fr));gap:10px;padding:10px 18px;align-items:center}
 .slt-h{font-size:.7rem;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:600;border-bottom:1px solid var(--line)}.slr{border-bottom:1px solid var(--line2)}.slr summary{cursor:pointer;list-style:none}.slr summary::-webkit-details-marker{display:none}.slr summary:hover{background:var(--sunk)}
 .slr-b{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px;padding:4px 18px 16px}.slr-b h4{margin:6px 0;font-size:.78rem;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)}.slr-b ul{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px;font-size:.82rem}
@@ -199,6 +199,7 @@ code.bm{display:block;font:12px/1.45 var(--f-mono);background:var(--sunk);paddin
     <a href="#appels" data-p="appels"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2"/></svg>Appels</a>
     <a href="#suivisl" data-p="suivisl"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 20h18"/><path d="M6 16V10M11 16V6M16 16v-4"/><path d="M19 4l-3 3"/></svg>Suivi SL</a>
     <a href="#degust" data-p="degust"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 2h8l-1 7a3 3 0 0 1-6 0z"/><path d="M12 12v8M8 21h8"/></svg>Dégustations</a>
+    <a href="#emailing" data-p="emailing"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16v12H5.2L4 17.2z"/><path d="M8 9h8M8 12h5"/></svg>Emailing</a>
     <a href="#produits" data-p="produits"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 2h4v5l2 3v12H8V10l2-3V2z"/></svg>Produits</a>
     <a href="#brief" data-p="brief"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/></svg>Brief du lundi</a>
     <a href="#synchro" data-p="synchro" id="navsync" hidden></a>
@@ -895,6 +896,86 @@ function newProdView(){const p=st.np;
     <label>Date d'arrivée en succursale<input type="date" id="npstart" value="${esc(p.start)}"></label></div></section>`:''}
   <div><button class="btn primary" data-npsave>Ajouter le produit</button></div>`}
 
+// ---------- Emailing : contacts (table Supabase contacts) et campagnes (email_campaigns), sinon cet appareil ----------
+const TERR=['Laurentides','Lanaudière','Laval','Montréal','Montérégie','Capitale-Nationale','Chaudière-Appalaches','Mauricie','Centre-du-Québec','Estrie','Outaouais','Abitibi-Témiscamingue','Saguenay–Lac-Saint-Jean','Bas-Saint-Laurent','Côte-Nord','Gaspésie–Îles-de-la-Madeleine','Nord-du-Québec','Autre'];
+let CT=[],CT_LOCAL=false,CAMP=[],CAMP_LOCAL=false;
+async function loadCt(){const {data,error}=await SB.from('contacts').select('*').order('name');if(error){CT_LOCAL=true;CT=LS.get('contacts',[]);}else CT=data||[];
+  const r=await SB.from('email_campaigns').select('*').order('created_at',{ascending:false});if(r.error){CAMP_LOCAL=true;CAMP=LS.get('campaigns',[])}else CAMP=r.data||[]}
+async function ctInsert(rows){if(CT_LOCAL){rows.forEach((r,i)=>{r.id=Date.now()+i;CT.push(r)});LS.set('contacts',CT);return true}
+  for(let i=0;i<rows.length;i+=200){const {data,error}=await SB.from('contacts').insert(rows.slice(i,i+200)).select();if(error){toast('Import interrompu : '+error.message);return false}CT.push(...data)}return true}
+async function ctUpdate(c,patch){Object.assign(c,patch);if(CT_LOCAL){LS.set('contacts',CT);return}const {error}=await SB.from('contacts').update(patch).eq('id',c.id);if(error)toast('Modification non enregistrée : '+error.message)}
+async function ctDelete(ids){const set=new Set(ids.map(String));if(!CT_LOCAL){const {error}=await SB.from('contacts').delete().in('id',ids);if(error){toast('Suppression impossible : '+error.message);return}}
+  CT=CT.filter(c=>!set.has(String(c.id)));if(CT_LOCAL)LS.set('contacts',CT);st.ctSel=new Set();render()}
+async function campSave(x){if(CAMP_LOCAL){x.id=Date.now();CAMP.unshift(x);LS.set('campaigns',CAMP);return true}const {data,error}=await SB.from('email_campaigns').insert(x).select().single();if(error){toast('Campagne non enregistrée : '+error.message);return false}CAMP.unshift(data);return true}
+const myCt=()=>CT.filter(c=>c.rep_name===st.rep);
+const nrm=t=>String(t||'').normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase().trim();
+function ctFiltered(){const q=nrm(st.ctq);return myCt().filter(c=>(!st.ctt||c.territory===st.ctt)&&(!st.ctr||(c.role||'')===st.ctr)&&(!q||nrm([c.name,c.email,c.role,c.territory,c.store_name,c.store_no].join(' ')).includes(q))).sort((a,b)=>(a.territory||'').localeCompare(b.territory||'','fr')||(a.store_name||'').localeCompare(b.store_name||'','fr')||(a.name||'').localeCompare(b.name||'','fr'))}
+// lecture CSV (séparateur ; , ou tabulation, guillemets) ; Excel via SheetJS chargé à la demande
+function parseCSV(txt){txt=txt.replace(/^﻿/,'');const first=txt.split(/\r?\n/)[0]||'';const sep=[';','\t',','].sort((a,b)=>first.split(b).length-first.split(a).length)[0];
+  const rows=[];let row=[],cell='',q=false;for(let i=0;i<txt.length;i++){const ch=txt[i];
+    if(q){if(ch==='"'){if(txt[i+1]==='"'){cell+='"';i++}else q=false}else cell+=ch}
+    else if(ch==='"')q=true;else if(ch===sep){row.push(cell);cell=''}else if(ch==='\n'||ch==='\r'){if(ch==='\r'&&txt[i+1]==='\n')i++;row.push(cell);cell='';if(row.some(x=>x.trim()))rows.push(row);row=[]}else cell+=ch}
+  row.push(cell);if(row.some(x=>x.trim()))rows.push(row);return rows}
+function loadXLSX(){return window.XLSX?Promise.resolve():new Promise((ok,ko)=>{const s=document.createElement('script');s.src='https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';s.onload=ok;s.onerror=()=>ko(new Error('lecteur Excel indisponible'));document.head.appendChild(s)})}
+function mapCols(head){const h=head.map(nrm);const used=new Set();
+  const pick=(exact,...k)=>{let i=h.findIndex((x,n)=>!used.has(n)&&exact.includes(x));if(i<0)i=h.findIndex((x,n)=>!used.has(n)&&k.some(y=>x.includes(y)));if(i>=0)used.add(i);return i};
+  const store_no=pick(['n° succursale','no succursale','numero succursale','n° magasin'],'n°','no succ','numero');
+  const email=pick(['courriel','email','e-mail','adresse courriel'],'courriel','email','e-mail');
+  const territory=pick(['territoire','region'],'territoire','region');
+  const role=pick(['fonction','role','poste','titre'],'fonction','role (','poste','titre');
+  const store_name=pick(['succursale','magasin','store'],'succursale','magasin');
+  const name=pick(['nom','contact','name','prenom'],'nom','contact','name');
+  const city=pick(['ville','city'],'ville');
+  return {email,name,role,territory,store_no,store_name,city}}
+function importRows(rows){if(rows.length<2)return {err:'Le fichier ne contient pas de lignes.'};const m=mapCols(rows[0]);if(m.email<0)return {err:'Aucune colonne de courriel trouvée (en-tête « Courriel » ou « Email »).'};
+  const have=new Set(myCt().map(c=>nrm(c.email)));const seen=new Set();const out=[];let dup=0,bad=0;
+  rows.slice(1).forEach(r=>{const g=i=>i>=0?String(r[i]??'').trim():'';const email=g(m.email).toLowerCase();if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)){bad++;return}
+    if(have.has(email)||seen.has(email)){dup++;return}seen.add(email);
+    let name=g(m.name);const sname=g(m.store_name);if(/courriel g[ée]n[ée]ral/i.test(name))name=sname?sname+' (général)':'Courriel général';
+    const terrRaw=g(m.territory);const terr=TERR.find(t=>nrm(t)===nrm(terrRaw))||(terrRaw||'');
+    out.push({email,name,role:g(m.role)||(/succ\d+@/.test(email)?'Magasin':''),territory:terr,store_no:g(m.store_no),store_name:sname,city:g(m.city)})});
+  return {m,out,dup,bad,head:rows[0]}}
+function emailingView(){if(st.ctImp)return ctImportView();if(st.camp)return campView();
+  const mine=myCt();const list=ctFiltered();const sel=st.ctSel||(st.ctSel=new Set());const roles=[...new Set(mine.map(c=>c.role).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'fr'));
+  const terrs=[...new Set(mine.map(c=>c.territory).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'fr'));const nSel=list.filter(c=>sel.has(String(c.id))).length;
+  const kpi=(lb,v,sub)=>`<div class="kpi"><span>${lb}</span><b>${v}</b><span>${sub}</span></div>`;
+  return `<div class="head"><div><span class="eyebrow">Contacts de ${esc(st.rep)}</span><h1>Emailing</h1><p class="muted" style="margin:4px 0 0;max-width:72ch">Importe tes contacts (courriel, nom, fonction, territoire), filtre-les, puis prépare une campagne : l'envoi se fait depuis ta messagerie, en copie cachée.</p></div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn" data-ctimp>Importer des contacts</button><button class="btn primary" data-campnew${nSel?'':' disabled'}>Nouvelle campagne${nSel?` (${nSel})`:''}</button></div></div>
+  <div class="kpis">${kpi('Contacts',mine.length,'importés')}${kpi('Territoires',terrs.length,terrs.slice(0,3).join(', ')||'à classer')}${kpi('Sans territoire',mine.filter(c=>!c.territory).length,'à classer')}${kpi('Campagnes',CAMP.filter(x=>x.rep_name===st.rep).length,'préparées')}</div>
+  ${CT_LOCAL?'<p class="muted" style="font-size:.8rem;margin:0">Les contacts sont gardés sur cet appareil seulement tant que la table Supabase n\'est pas créée.</p>':''}
+  <div class="filters"><input type="search" id="ctq" placeholder="Nom, courriel, succursale…" value="${esc(st.ctq||'')}" aria-label="Chercher un contact">
+    <select data-ctt aria-label="Territoire" class="sel"><option value="">Tous les territoires</option>${TERR.filter(t=>terrs.includes(t)||t===st.ctt).concat(terrs.filter(t=>!TERR.includes(t))).map(t=>`<option${st.ctt===t?' selected':''}>${esc(t)}</option>`).join('')}</select>
+    <select data-ctr aria-label="Fonction" class="sel"><option value="">Toutes les fonctions</option>${roles.map(r=>`<option${st.ctr===r?' selected':''}>${esc(r)}</option>`).join('')}</select></div>
+  <div class="panel tablebox"><table><thead><tr><th style="width:34px"><input type="checkbox" data-ctall aria-label="Tout sélectionner"${list.length&&nSel===list.length?' checked':''}></th><th>Nom</th><th>Courriel</th><th>Fonction</th><th>Territoire</th><th class="hide-sm">Succursale</th><th></th></tr></thead><tbody>
+  ${list.map(c=>`<tr><td><input type="checkbox" data-ctsel="${c.id}"${sel.has(String(c.id))?' checked':''} aria-label="Sélectionner"></td><td><b>${esc(c.name||'—')}</b></td><td style="font-size:.85rem">${esc(c.email)}</td>
+    <td><input class="cell" data-ctrole="${c.id}" value="${esc(c.role||'')}" placeholder="—" aria-label="Fonction"></td>
+    <td><select class="cell" data-ctterr="${c.id}" aria-label="Territoire"><option value="">À classer</option>${TERR.concat(c.territory&&!TERR.includes(c.territory)?[c.territory]:[]).map(t=>`<option${c.territory===t?' selected':''}>${esc(t)}</option>`).join('')}</select></td>
+    <td class="hide-sm" style="font-size:.82rem">${esc(c.store_name||'')}${c.store_no?` <span class="muted">n° ${esc(c.store_no)}</span>`:''}</td><td><button class="btn sm" data-ctdel="${c.id}" aria-label="Supprimer">×</button></td></tr>`).join('')||`<tr><td colspan="7" class="empty">${mine.length?'Aucun contact ne correspond aux filtres.':'Aucun contact. Clique « Importer des contacts ».'}</td></tr>`}
+  </tbody></table></div>
+  ${nSel?`<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center"><span class="muted">${nSel} sélectionné${nSel>1?'s':''} :</span><select data-ctbulk class="sel"><option value="">Classer dans un territoire…</option>${TERR.map(t=>`<option>${t}</option>`).join('')}</select><button class="btn sm" data-ctdelsel>Supprimer la sélection</button></div>`:''}
+  <section class="panel"><div class="panel-h"><h2>Campagnes</h2><span class="muted num">${CAMP.filter(x=>x.rep_name===st.rep).length}</span></div><ul class="acts">${CAMP.filter(x=>x.rep_name===st.rep).map(x=>`<li><div class="body"><span class="t">${esc(x.subject||'Sans objet')}</span><div class="w">${fdate(x.created_at)}${x.created_by?' · par '+esc(x.created_by):''} · ${x.n} destinataire${x.n>1?'s':''}${x.territories&&x.territories.length?' · '+esc(x.territories.join(', ')):''}</div></div><button class="btn sm" data-campopen="${x.id}">Rouvrir</button></li>`).join('')||'<li class="empty">Aucune campagne. Sélectionne des contacts puis « Nouvelle campagne ».</li>'}</ul></section>`}
+function ctImportView(){const r=st.ctImp.res;
+  return `<div><button class="btn sm" data-ctimpx>← Contacts</button></div><div class="head"><div><span class="eyebrow">Emailing</span><h1>Importer des contacts</h1><p class="muted" style="margin:4px 0 0;max-width:72ch">Fichier CSV ou Excel avec une ligne d'en-tête. Colonnes reconnues : Courriel/Email, Nom/Contact, Fonction/Rôle, Territoire/Région, Succursale, N° succursale, Ville. Les courriels déjà présents sont ignorés.</p></div></div>
+  <section class="panel"><div class="pad" style="display:flex;flex-direction:column;gap:12px">
+    <label class="btn" style="align-self:flex-start" for="ctfile">Choisir un fichier (.csv, .xlsx)</label><input type="file" id="ctfile" accept=".csv,.txt,.tsv,.xlsx,.xls" hidden>
+    <span class="muted" style="font-size:.85rem">ou colle les lignes copiées depuis Excel :</span>
+    <textarea id="ctpaste" class="txt" rows="5" style="max-width:none" placeholder="Courriel	Nom	Fonction	Territoire">${esc(st.ctImp.paste||'')}</textarea><button class="btn sm" style="align-self:flex-start" data-ctparse>Lire le texte collé</button></div></section>
+  ${r?(r.err?`<div class="panel pad" style="border-color:var(--R)">${esc(r.err)}</div>`:`<section class="panel"><div class="panel-h"><h2>Aperçu</h2><p>${r.out.length} nouveau${r.out.length>1?'x':''} contact${r.out.length>1?'s':''}${r.dup?` · ${r.dup} déjà présent${r.dup>1?'s':''} ou en double`:''}${r.bad?` · ${r.bad} ligne${r.bad>1?'s':''} sans courriel valide`:''}. Colonnes lues : ${Object.entries({email:'courriel',name:'nom',role:'fonction',territory:'territoire',store_name:'succursale'}).filter(([k])=>r.m[k]>=0).map(([k,l])=>l+' = « '+esc(r.head[r.m[k]])+' »').join(', ')}.</p></div>
+    <div class="pad slform"><label>Territoire pour les contacts qui n'en ont pas<select id="ctdefterr"><option value="">À classer plus tard</option>${TERR.map(t=>`<option${st.ctImp.terr===t?' selected':''}>${t}</option>`).join('')}</select></label></div>
+    <div class="tablebox"><table><thead><tr><th>Nom</th><th>Courriel</th><th>Fonction</th><th>Territoire</th><th class="hide-sm">Succursale</th></tr></thead><tbody>${r.out.slice(0,8).map(c=>`<tr><td>${esc(c.name)}</td><td>${esc(c.email)}</td><td>${esc(c.role)}</td><td>${esc(c.territory||'—')}</td><td class="hide-sm">${esc(c.store_name)}</td></tr>`).join('')}${r.out.length>8?`<tr><td colspan="5" class="muted">… et ${r.out.length-8} autres</td></tr>`:''}</tbody></table></div>
+    <div class="pad"><button class="btn primary" data-ctimpgo${r.out.length?'':' disabled'}>Importer ${r.out.length} contact${r.out.length>1?'s':''}</button></div></section>`):''}`}
+function campView(){const c=st.camp;const to=CT.filter(x=>c.ids.includes(String(x.id)));const emails=to.map(x=>x.email);
+  const terrs=[...new Set(to.map(x=>x.territory).filter(Boolean))];const B=40;const batches=[];for(let i=0;i<emails.length;i+=B)batches.push(emails.slice(i,i+B));
+  const mt=b=>'mailto:?bcc='+encodeURIComponent(b.join(','))+'&subject='+encodeURIComponent(c.subject||'')+'&body='+encodeURIComponent(c.body||'');
+  return `<div><button class="btn sm" data-campx>← Contacts</button></div><div class="head"><div><span class="eyebrow">Campagne · ${to.length} destinataire${to.length>1?'s':''}${terrs.length?' · '+esc(terrs.join(', ')):''}</span><h1>${c.id?'Campagne':'Nouvelle campagne'}</h1></div></div>
+  <section class="panel"><div class="panel-h"><h2>1. Message</h2><p>Envoyé en copie cachée : chaque destinataire ne voit que son adresse. Pour partir d'un texte produit, utilise « Rédiger un courriel » dans Appels puis colle-le ici.</p></div><div class="pad" style="display:flex;flex-direction:column;gap:10px">
+    <input id="campsubj" class="txt" style="max-width:none" placeholder="Objet" value="${esc(c.subject||'')}" aria-label="Objet">
+    <textarea id="campbody" class="txt" rows="12" style="max-width:none" placeholder="Bonjour,&#10;&#10;…" aria-label="Message">${esc(c.body||'')}</textarea></div></section>
+  <section class="panel"><div class="panel-h"><h2>2. Envoyer</h2><p>${batches.length>1?`Les messageries limitent la longueur d'un lien : les ${emails.length} adresses sont réparties en ${batches.length} envois de ${B} au plus.`:'Ouvre le message prêt dans ta messagerie, vérifie-le, puis envoie.'}</p></div><div class="pad camp-act" style="display:flex;gap:8px;flex-wrap:wrap">
+    ${batches.map((b,i)=>`<a class="btn primary" data-campmt href="${esc(mt(b))}">Ouvrir dans ma messagerie${batches.length>1?` (${i+1}/${batches.length})`:''}</a>`).join('')}
+    <button class="btn" data-campcopy>Copier les adresses</button><button class="btn" data-campcsv>Exporter en CSV</button>${c.id?'':'<button class="btn" data-campsave>Enregistrer la campagne</button>'}</div></section>
+  <details class="panel"><summary class="panel-h" style="cursor:pointer"><h2 style="display:inline">Destinataires (${to.length})</h2></summary><ul class="acts">${to.map(x=>`<li><div class="body"><span class="t">${esc(x.name||x.email)}</span><div class="w">${esc(x.email)}${x.role?' · '+esc(x.role):''}${x.territory?' · '+esc(x.territory):''}</div></div></li>`).join('')}</ul></details>`}
+
 // ---------- Aperçu : nouvelles vues ----------
 const SLST=[['actif','À vendre'],['avenir','À venir'],['ancien','Ancien']];
 const slStatus=f=>setOf(f).sl_status||(f.t3>0?'actif':'ancien');
@@ -983,14 +1064,14 @@ function mailPanel(){const L=mailSL();const sel=st.mailSel||[];const txt=mailTex
 function synchroView(){if(!IS_ADMIN)return '<div class="panel empty">Réservé à l\'administrateur.</div>';
   return `<div class="head"><div><span class="eyebrow">Données actuelles : période ${D.ref}, extraites le ${dataDate}</span><h1>Synchroniser EZFocus</h1></div></div>
   <section class="panel"><div class="panel-h"><h2>Mettre à jour les données</h2><p>À faire chaque matin. Tous les représentants voient les nouvelles données dès que c'est terminé.</p></div><div class="pad">${hkSyncHelp()}</div></section>`}
-const PAGES={aujourdhui:todayView,appels:callView,suivisl:slSuiviView,degust:tastView,produits:prodsView,brief:briefView,synchro:synchroView};
+const PAGES={aujourdhui:todayView,appels:callView,suivisl:slSuiviView,degust:tastView,emailing:emailingView,produits:prodsView,brief:briefView,synchro:synchroView};
 function render(keepFocus){document.getElementById('avatar').textContent=st.rep.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();document.querySelectorAll('nav.tabs a').forEach(a=>a.toggleAttribute('aria-current',a.dataset.p===st.page)||a.dataset.p===st.page&&a.setAttribute('aria-current','page'));
   document.querySelectorAll('nav.tabs a').forEach(a=>{if(a.dataset.p===st.page)a.setAttribute('aria-current','page');else a.removeAttribute('aria-current')});
   document.getElementById('view').innerHTML=PAGES[st.page]();
   const cq=document.getElementById('cq');if(cq&&keepFocus){cq.focus();cq.setSelectionRange(cq.value.length,cq.value.length)}
   const tq=document.getElementById('tq');if(tq&&keepFocus){tq.focus();tq.setSelectionRange(tq.value.length,tq.value.length)}
   const pq=document.getElementById('pq');if(pq&&keepFocus){pq.focus();pq.setSelectionRange(pq.value.length,pq.value.length)}}
-function fromHash(){const h=location.hash.slice(1);st.page=PAGES[h]?h:'aujourdhui';st.fam=null;st.np=null;render();window.scrollTo(0,0)}
+function fromHash(){const h=location.hash.slice(1);st.page=PAGES[h]?h:'aujourdhui';st.fam=null;st.np=null;st.ctImp=null;st.camp=null;render();window.scrollTo(0,0)}
 window.addEventListener('hashchange',fromHash);
 function openFam(i){st.fam=+i;if(st.page!=='produits'){st.page='produits';history.replaceState(null,'','#produits')}render();window.scrollTo(0,0)}
 function saveRoute(){LS.set(routeKey(),getRoute())}
@@ -1082,7 +1163,44 @@ document.addEventListener('change',e=>{
         if(error){toast('Photo non enregistrée : '+error.message);return}
         const url=SB.storage.from('product-photos').getPublicUrl(path).data.publicUrl;const p=photosOf(f);p.unshift(url);saveSet(f,{photos:p},'Photo ajoutée')},'image/jpeg',.82)};img.src=rd.result};rd.readAsDataURL(file)}
 });
-Promise.all([loadSL().catch(()=>{SLL_LOCAL=true;SLL=LS.get('sl',[])}),loadDone().catch(()=>{DONE_LOCAL=true}),loadSess().catch(()=>{SESS_LOCAL=true;SESS=LS.get('sessions',[])}),loadTast().catch(()=>{TAST_LOCAL=true;TAST=LS.get('tastings',[])})]).finally(()=>{if(st.page!=='produits')render()});
+// événements Emailing
+function campMailto(i){const c=st.camp;const em=CT.filter(x=>c.ids.includes(String(x.id))).map(x=>x.email).slice(i*40,i*40+40);return 'mailto:?bcc='+encodeURIComponent(em.join(','))+'&subject='+encodeURIComponent(c.subject||'')+'&body='+encodeURIComponent(c.body||'')}
+document.addEventListener('click',e=>{const t=e.target.closest('[data-ctimp],[data-ctimpx],[data-ctparse],[data-ctimpgo],[data-ctdel],[data-ctdelsel],[data-campnew],[data-campx],[data-campcopy],[data-campcsv],[data-campsave],[data-campopen],[data-campmt]');if(!t)return;const d=t.dataset;
+  if(d.campmt!=null){const all=[...document.querySelectorAll('[data-campmt]')];t.href=campMailto(all.indexOf(t));return}
+  if(d.ctimp!=null){st.ctImp={};render();window.scrollTo(0,0);return}
+  if(d.ctimpx!=null){st.ctImp=null;render();return}
+  if(d.ctparse!=null){const v=document.getElementById('ctpaste').value;st.ctImp.paste=v;st.ctImp.res=importRows(parseCSV(v));render();return}
+  if(d.ctimpgo!=null){const r=st.ctImp.res;const terr=st.ctImp.terr||'';const by=(ME.rep_name||'').split(' ')[0];const rows=r.out.map(c=>({...c,territory:c.territory||terr,rep_name:st.rep,created_by:by,created_at:new Date().toISOString()}));
+    t.disabled=true;ctInsert(rows).then(ok=>{if(ok){toast(rows.length+' contacts importés');st.ctImp=null;render();window.scrollTo(0,0)}else t.disabled=false});return}
+  if(d.ctdel!=null){if(confirm('Supprimer ce contact ?'))ctDelete([d.ctdel]);return}
+  if(d.ctdelsel!=null){const ids=[...st.ctSel];if(confirm('Supprimer '+ids.length+' contact(s) ?'))ctDelete(ids);return}
+  if(d.campnew!=null){const ids=ctFiltered().map(c=>String(c.id)).filter(id=>st.ctSel.has(id));if(!ids.length)return;st.camp={ids,subject:'',body:''};render();window.scrollTo(0,0);return}
+  if(d.campx!=null){st.camp=null;render();return}
+  if(d.campopen!=null){const x=CAMP.find(y=>String(y.id)===d.campopen);if(x){st.camp={id:x.id,ids:(x.ids||[]).map(String),subject:x.subject,body:x.body};render();window.scrollTo(0,0)}return}
+  if(d.campcopy!=null){const em=CT.filter(x=>st.camp.ids.includes(String(x.id))).map(x=>x.email).join('; ');navigator.clipboard.writeText(em).then(()=>toast('Adresses copiées : colle-les dans le champ Cci'),()=>toast('Copie impossible'));return}
+  if(d.campcsv!=null){const q=v=>'"'+String(v||'').replace(/"/g,'""')+'"';const rows=[['Courriel','Nom','Fonction','Territoire','Succursale','N° succursale']].concat(CT.filter(x=>st.camp.ids.includes(String(x.id))).map(x=>[x.email,x.name,x.role,x.territory,x.store_name,x.store_no]));
+    const blob=new Blob(['﻿'+rows.map(r=>r.map(q).join(';')).join('\r\n')],{type:'text/csv;charset=utf-8'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='campagne-'+isoDay(new Date())+'.csv';document.body.appendChild(a);a.click();a.remove();return}
+  if(d.campsave!=null){const c=st.camp;const to=CT.filter(x=>c.ids.includes(String(x.id)));const x={rep_name:st.rep,subject:c.subject||'',body:c.body||'',ids:c.ids,n:c.ids.length,territories:[...new Set(to.map(y=>y.territory).filter(Boolean))],created_by:(ME.rep_name||'').split(' ')[0],created_at:new Date().toISOString()};
+    campSave(x).then(ok=>{if(ok){c.id=x.id||CAMP[0].id;toast('Campagne enregistrée');render()}});return}
+});
+document.addEventListener('input',e=>{const id=e.target.id;
+  if(id==='ctq'){st.ctq=e.target.value;render(true);const q=document.getElementById('ctq');if(q){q.focus();q.setSelectionRange(q.value.length,q.value.length)}}
+  if(id==='ctpaste'&&st.ctImp)st.ctImp.paste=e.target.value;
+  if(st.camp&&(id==='campsubj'||id==='campbody'))st.camp[id==='campsubj'?'subject':'body']=e.target.value});
+document.addEventListener('change',e=>{const el=e.target,d=el.dataset||{};
+  if(d.ctt!=null){st.ctt=el.value;render();return}
+  if(d.ctr!=null){st.ctr=el.value;render();return}
+  if(d.ctall!=null){const sel=st.ctSel||(st.ctSel=new Set());ctFiltered().forEach(c=>el.checked?sel.add(String(c.id)):sel.delete(String(c.id)));render();return}
+  if(d.ctsel!=null){const sel=st.ctSel||(st.ctSel=new Set());el.checked?sel.add(d.ctsel):sel.delete(d.ctsel);render();return}
+  if(d.ctterr!=null){const c=CT.find(x=>String(x.id)===d.ctterr);if(c)ctUpdate(c,{territory:el.value||null});return}
+  if(d.ctrole!=null){const c=CT.find(x=>String(x.id)===d.ctrole);if(c)ctUpdate(c,{role:el.value.trim()||null});return}
+  if(d.ctbulk!=null&&el.value){const ids=st.ctSel;Promise.all(CT.filter(c=>ids.has(String(c.id))).map(c=>ctUpdate(c,{territory:el.value}))).then(()=>{toast('Contacts classés : '+el.value);render()});return}
+  if(el.id==='ctdefterr'&&st.ctImp){st.ctImp.terr=el.value;return}
+  if(el.id==='ctfile'&&el.files[0]){const f=el.files[0];const done=rows=>{st.ctImp.res=importRows(rows);render()};
+    if(/\.xlsx?$/i.test(f.name)){loadXLSX().then(()=>f.arrayBuffer()).then(buf=>{const wb=XLSX.read(buf,{type:'array'});const ws=wb.Sheets[wb.SheetNames[0]];done(XLSX.utils.sheet_to_json(ws,{header:1,defval:''}).map(r=>r.map(String)))}).catch(err=>toast('Lecture impossible : '+err.message))}
+    else f.text().then(tx=>done(parseCSV(tx)))}
+});
+Promise.all([loadCt().catch(()=>{CT_LOCAL=true;CT=LS.get('contacts',[]);CAMP_LOCAL=true;CAMP=LS.get('campaigns',[])}),loadSL().catch(()=>{SLL_LOCAL=true;SLL=LS.get('sl',[])}),loadDone().catch(()=>{DONE_LOCAL=true}),loadSess().catch(()=>{SESS_LOCAL=true;SESS=LS.get('sessions',[])}),loadTast().catch(()=>{TAST_LOCAL=true;TAST=LS.get('tastings',[])})]).finally(()=>{if(st.page!=='produits')render()});
 fromHash();
 }
 boot();

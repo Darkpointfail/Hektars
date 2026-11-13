@@ -70,3 +70,29 @@ alter table public.product_settings add column if not exists custom jsonb;
 alter table public.product_settings add column if not exists sl_wh numeric;
 alter table public.product_settings add column if not exists sl_wh_at timestamptz;
 notify pgrst, 'reload schema';
+
+-- Emailing : contacts importés et campagnes
+create table if not exists public.contacts(
+  id uuid primary key default gen_random_uuid(),
+  rep_name text not null,
+  email text not null,
+  name text, role text, territory text, store_no text, store_name text, city text,
+  created_by text,
+  created_at timestamptz not null default now()
+);
+create unique index if not exists contacts_rep_email on public.contacts(rep_name, lower(email));
+alter table public.contacts enable row level security;
+drop policy if exists contacts_all on public.contacts;
+create policy contacts_all on public.contacts for all to authenticated using (public.is_admin() or rep_name = (public.me()).rep_name) with check (public.is_admin() or rep_name = (public.me()).rep_name);
+create table if not exists public.email_campaigns(
+  id uuid primary key default gen_random_uuid(),
+  rep_name text not null,
+  subject text, body text,
+  ids jsonb not null default '[]', n int, territories jsonb,
+  created_by text,
+  created_at timestamptz not null default now()
+);
+alter table public.email_campaigns enable row level security;
+drop policy if exists camp_all on public.email_campaigns;
+create policy camp_all on public.email_campaigns for all to authenticated using (public.is_admin() or rep_name = (public.me()).rep_name) with check (public.is_admin() or rep_name = (public.me()).rep_name);
+notify pgrst, 'reload schema';
