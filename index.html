@@ -501,14 +501,24 @@ function dashView(){const ms=myStores();const all=actionsFor(ms);
   ${!st.dt||st.dt==='SL'?slPushPanel(ms):''}
 `}
 // SL à pousser : par produit, magasins où le placer (N), où le stock dort (D) et où il se vend (V)
-function slPushPanel(ms){const g={};ms.forEach(s=>byStore[s.i].forEach(o=>{if(prodType(F[o.f])!=='SL'||!'NDV'.includes(o.t))return;(g[o.f]=g[o.f]||{f:F[o.f],N:[],D:[],V:[]})[o.t].push(o)}));
-  const rows=Object.values(g).filter(x=>x.N.length+x.D.length).sort((a,b)=>b.N.length+b.D.length-(a.N.length+a.D.length));
-  const lst=(a,fmt)=>a.length?a.slice().sort((x,y)=>fmt.sort(x,y)).map(o=>`<li><span class="t">${esc(S[o.s].n)}</span> <span class="muted">n° ${S[o.s].no} · ${esc(S[o.s].v)}</span> <span class="muted">· ${fmt.txt(o)}</span></li>`).join(''):'<li class="muted">Aucun</li>';
-  const fN={sort:(a,b)=>b.np-a.np,txt:o=>`${o.np} magasins comparables le vendent`},fD={sort:(a,b)=>b.inv-a.inv,txt:o=>`${nf0.format(o.inv)} u. sans vente sur 3 périodes`},fV={sort:(a,b)=>b.t3-a.t3,txt:o=>`${cs(o.t3)} cs sur 3 périodes, ${nf0.format(o.inv)} u. en stock`};
-  return `<section class="panel"><div class="panel-h"><h2>SL à pousser cette semaine</h2><span class="muted num">${rows.length}</span><p>Par lot SL : magasins où le placer (absent alors que les pairs le vendent), où le stock dort, et où il se vend. Clique un produit pour voir les magasins.</p></div>
-  ${rows.length?`<div class="slt"><div class="slt-h"><span>SL</span><span>À placer</span><span>Stock qui dort</span><span>En vente</span></div>${rows.map(x=>`<details class="slr"><summary><span><b>${esc(pname(x.f))}</b><br><span class="muted" style="font-size:.76rem">${x.f.codes[0]||''}</span></span><span>${x.N.length} mag.</span><span>${x.D.length} mag.</span><span>${x.V.length} mag.</span></summary>
-    <div class="slr-b"><div><h4>À placer (${x.N.length})</h4><ul>${lst(x.N,fN)}</ul></div><div><h4>Stock qui dort (${x.D.length})</h4><ul>${lst(x.D,fD)}</ul></div><div><h4>En vente (${x.V.length})</h4><ul>${lst(x.V,fV)}</ul></div></div></details>`).join('')}</div>`
-   :'<div class="empty pad">Le détail SL par magasin arrive avec la prochaine mise à jour EZFocus (les données actuelles ne contiennent pas encore le stock SL par magasin).</div>'}</section>`}
+// SL à pousser : stock en entrepôt SAQ le plus important, ou retard sur l'objectif 80 % en 6 semaines
+function slPushList(ms){const g={};ms.forEach(s=>byStore[s.i].forEach(o=>{if(prodType(F[o.f])!=='SL'||!'NDV'.includes(o.t))return;(g[o.f]=g[o.f]||{N:[],D:[],V:[]})[o.t].push(o)}));
+  const all=F.filter(f=>isActive(f.i)&&prodType(f)==='SL'&&slStatus(f)==='actif').map(f=>{const r=slInfo(f);const sig=g[f.i]||{N:[],D:[],V:[]};
+    const late=(r.state==='retard'||r.state==='rate')&&r.expected!=null&&r.sold!=null?Math.max(0,r.expected-r.sold):0;const wh=r.wh||0;
+    const why=[wh?`<b>${nf0.format(wh)} cs</b> en entrepôt SAQ`:'',late?`<b>${cs(late)} cs</b> sous l'objectif (${nf0.format((r.pct||0)*100)} % des 80 %)`:''].filter(Boolean);
+    return {f,r,wh,late,why,score:Math.max(wh,late),...sig,sugg:slSugg(f,ms)}});
+  const pri=all.filter(x=>x.score>0).sort((a,b)=>b.score-a.score).slice(0,8);
+  if(pri.length)return {rows:pri,pri:true};
+  return {rows:all.filter(x=>x.N.length+x.D.length).sort((a,b)=>b.N.length+b.D.length-(a.N.length+a.D.length)).slice(0,8),pri:false}}
+function slPushPanel(ms){const {rows,pri}=slPushList(ms);
+  const li=(o,txt)=>`<li><span class="t">${esc(S[o.s].n)}</span> <span class="muted">n° ${S[o.s].no} · ${esc(S[o.s].v)}</span> <span class="muted">· ${txt}</span></li>`;
+  const lst=(a,sort,txt)=>a.length?a.slice().sort(sort).map(o=>li(o,txt(o))).join(''):'<li class="muted">Aucun signalé</li>';
+  const place=x=>x.N.length?lst(x.N,(a,b)=>b.np-a.np,o=>`${o.np} magasins comparables le vendent`):(x.sugg.length?x.sugg.slice(0,8).map(y=>`<li><span class="t">${esc(y.s.n)}</span> <span class="muted">n° ${y.s.no} · ${esc(y.s.v)} · ${y.why}</span></li>`).join(''):'<li class="muted">Aucun</li>');
+  return `<section class="panel"><div class="panel-h"><h2>SL à pousser cette semaine</h2><span class="muted num">${rows.length}</span><p>${pri?'Les SL avec le plus de stock en entrepôt SAQ ou le plus en retard sur l\'objectif 80 % en 6 semaines. Clique un produit pour voir où le placer, où il dort et où il se vend.':'Saisis le stock entrepôt ou le stock d\'entrée de tes SL dans <a href="#suivisl">Suivi SL</a> pour classer par priorité. En attendant : les SL avec le plus de magasins où agir.'}</p></div>
+  ${rows.length?`<div class="slt"><div class="slt-h"><span>SL</span><span>À placer</span><span>Stock qui dort</span><span>En vente</span></div>${rows.map(x=>`<details class="slr"><summary><span><b>${esc(pname(x.f))}</b>${x.why&&x.why.length?`<br><span style="font-size:.76rem">${x.why.join(' · ')}</span>`:`<br><span class="muted" style="font-size:.76rem">${x.f.codes[0]||''}</span>`}</span><span>${x.N.length||(x.sugg.length?x.sugg.length+' sugg.':0)}${x.N.length?' mag.':''}</span><span>${x.D.length} mag.</span><span>${x.V.length} mag.</span></summary>
+    <div class="slr-b"><div><h4>À placer${x.N.length?` (${x.N.length})`:' : suggestions'}</h4><ul>${place(x)}</ul></div><div><h4>Stock qui dort (${x.D.length})</h4><ul>${lst(x.D,(a,b)=>b.inv-a.inv,o=>`${nf0.format(o.inv)} u. sans vente sur 3 périodes`)}</ul></div><div><h4>En vente (${x.V.length})</h4><ul>${lst(x.V,(a,b)=>b.t3-a.t3,o=>`${cs(o.t3)} cs sur 3 périodes, ${nf0.format(o.inv)} u. en stock`)}</ul></div></div>
+    <div style="padding:0 16px 12px"><button class="lnk" data-fam="${x.f.i}">Voir la fiche du produit</button></div></details>`).join('')}</div>`
+   :'<div class="empty pad">Aucun SL actif à pousser pour l\'instant.</div>'}</section>`}
 
 // ---------- Session d'appels ----------
 const CALLTXT={O:'OBL sans stock : faire recommander',R:'En rupture : faire recommander',L:o=>`Stock faible (${nf0.format(o.inv)} u.) : faire recommander`,P:o=>`Plus en magasin depuis au moins 3 périodes (${cs(Math.max(o.t13,o.l13))} cs/an au meilleur) : relancer`,
@@ -1001,22 +1011,10 @@ function briefData(){const ms=myStores();const keep=st.dt;st.dt='';const all=act
   return {ms,todo,top:todo.slice(0,10),t13:sum('t13'),l13:sum('l13'),t3:sum('t3'),l3:sum('l3'),sl,nv,nSuivi:todo.filter(a=>a.cat==='suivi').length,nMarche:todo.filter(a=>a.cat==='marche').length}}
 const pctTx=r=>r==null?'—':(r>=0?'+':'')+nf0.format(r*100)+' %';
 
-// SL les plus durs à placer (Brief du lundi) : retard sur l'objectif 80 % / 6 sem., sinon faible présence en succursale
-function slHard(ms){const nAct=S.filter(x=>!x.inactive&&x.t3>0).length||1;
-  return F.filter(f=>isActive(f.i)&&prodType(f)==='SL'&&slStatus(f)==='actif').map(f=>{const r=slInfo(f);
-    const tracked=r.qty&&r.sold!=null&&r.expected>0&&r.state!=='atteint'&&r.state!=='attente';
-    const score=tracked?r.sold/r.expected:f.nT3/nAct;
-    const why=tracked?`${cs(r.sold)} cs vendues sur ${cs(r.expected)} attendues à ce stade (${nf0.format(r.sold/r.expected*100)} %)`:`en vente dans ${f.nT3} magasins sur ${nAct}`;
-    return {f,r,tracked,score,why,sugg:slSugg(f,ms)}}).filter(x=>x.score<1&&x.sugg.length).sort((a,b)=>(b.tracked-a.tracked)||a.score-b.score).slice(0,5)}
 function slSugg(f,ms){const out=[];const seen=new Set();
   ms.forEach(s=>{const o=byStore[s.i].find(x=>x.f===f.i&&x.t==='N');if(o){seen.add(s.i);out.push({s,why:`absent, ${o.np} magasins comparables le vendent`,k:2,v:o.v||0})}});
   ms.forEach(s=>{if(seen.has(s.i)||s.inactive||!(s.t3>0))return;if(byStore[s.i].some(x=>x.f===f.i&&(x.t==='V'||x.t==='D')))return;out.push({s,why:`gros vendeur Hektars : ${cs(s.t3)} cs sur 3 périodes`,k:1,v:s.t3})});
   return out.sort((a,b)=>b.k-a.k||b.v-a.v).slice(0,12)}
-function slHardPanel(ms){const l=slHard(ms);if(!l.length)return '';
-  return `<section class="panel"><div class="panel-h"><h2>SL les plus durs à placer</h2><p>Les SL actifs les plus en retard sur l'objectif 80 % en 6 semaines (ou les moins présents en succursale si le stock d'entrée n'est pas saisi). Clique pour voir où les placer chez toi.</p></div>
-  ${l.map(x=>`<details class="stl" style="border-top:1px solid var(--line2)"><summary style="cursor:pointer;padding:12px 18px;display:flex;gap:10px;align-items:center;flex-wrap:wrap"><b>${esc(pname(x.f))}</b> ${slChip(x.f)}${x.r.qty?' '+slStateChip(x.r.state):''}<span class="muted" style="font-size:.82rem">${x.why}</span><span class="muted" style="margin-left:auto;font-size:.8rem">${x.sugg.length} suggestion${x.sugg.length>1?'s':''} ▾</span></summary>
-    <ul class="acts">${x.sugg.map(y=>`<li><div class="body"><span class="t" style="font-weight:600">${esc(y.s.n)}</span><div class="w">${esc(y.s.v)} · n° ${y.s.no} · ${y.why} · ${y.s.days==null?'jamais visité':'visite il y a '+y.s.days+' j'}</div></div><button class="btn sm" data-addroute="${y.s.no}">+ Journée</button></li>`).join('')}</ul>
-    <div style="padding:0 18px 12px"><button class="lnk" data-fam="${x.f.i}">Voir la fiche du produit</button></div></details>`).join('')}</section>`}
 function briefView(){const b=briefData();const first=st.rep.split(' ')[0];
   return previewNote(`Voici le courriel que chaque représentant recevrait le lundi matin, calculé à partir de l'export EZFocus. Ici, à partir de l'extraction du ${dataDate}.`)+`
   <div class="dfilters">${IS_ADMIN&&D.reps.length>1?`<label class="dfl"><span class="eyebrow">Représentant</span><select data-dashrep>${D.reps.map(r=>`<option${r===st.rep?' selected':''}>${esc(r)}</option>`).join('')}</select></label>`:''}</div>
@@ -1025,7 +1023,6 @@ function briefView(){const b=briefData();const first=st.rep.split(' ')[0];
    <button class="btn primary" data-copybrief>Copier le courriel</button></div>
   <section class="panel"><div class="panel-h"><h2>Tes 10 actions prioritaires</h2><p>Triées par caisses en jeu par an. Le détail est dans Aujourd'hui.</p></div>
    <ul class="acts">${b.top.map((a,k)=>`<li><span class="chip">${k+1}</span><div class="body"><button class="lnk t" data-fam="${a.f.i}">${esc(pname(a.f))}</button> ${typeChip(a.f)}<div class="w"><b>${esc(a.s.n)}</b> · ${a.label}</div></div>${a.v?`<span class="v">${money(a.v)}</span>`:''}</li>`).join('')||'<li class="empty">Aucune action ouverte.</li>'}</ul></section>
-  ${slHardPanel(b.ms)}
   ${slPushPanel(b.ms)}
   <section class="panel"><div class="panel-h"><h2>Magasins à revoir</h2><p>Pas de visite inscrite dans EZFocus depuis plus de 60 jours, les plus gros vendeurs d'abord.</p></div>
    <ul class="acts">${b.nv.map(s=>`<li><span class="chip">${s.days==null?'—':s.days+' j'}</span><div class="body"><span class="t" style="font-weight:600">${esc(s.n)}</span><div class="w">${esc(s.v)} · ${s.days==null?'aucune visite inscrite':'dernière visite il y a '+s.days+' jours'} · ${nf0.format(s.t13)} cs sur 13 périodes</div></div><button class="btn sm" data-addroute="${s.no}">+ Journée</button></li>`).join('')||'<li class="empty">Tous tes magasins ont été visités dans les 60 derniers jours.</li>'}</ul></section>
@@ -1033,8 +1030,7 @@ function briefView(){const b=briefData();const first=st.rep.split(' ')[0];
 function briefText(){const b=briefData();const first=st.rep.split(' ')[0];
   let t=`Bonjour ${first},\n\nTon territoire : ${nf0.format(b.t13)} cs sur 13 périodes (${pctTx(gr(b.t13,b.l13))} vs an passé), ${nf0.format(b.t3)} cs sur les 3 dernières (${pctTx(gr(b.t3,b.l3))}).\n\nTES 10 ACTIONS PRIORITAIRES\n`;
   b.top.forEach((a,k)=>t+=`${k+1}. ${a.s.n} : ${pname(a.f)} (${a.f.codes[0]}). ${a.label}${a.v?' ('+money(a.v)+')':''}\n`);
-  if(b.sl.length){t+=`\nSL À POUSSER\n`;b.sl.forEach(x=>t+=`- ${pname(x.f)} : à placer dans ${x.N} magasins, stock qui dort dans ${x.D}\n`)}
-  {const h=slHard(b.ms);if(h.length){t+=`\nSL LES PLUS DURS À PLACER\n`;h.forEach(x=>t+=`- ${pname(x.f)} : ${x.why}. À proposer : ${x.sugg.slice(0,5).map(y=>y.s.n).join(', ')}\n`)}}
+  {const pl=slPushList(b.ms).rows;if(pl.length){t+=`\nSL À POUSSER CETTE SEMAINE\n`;pl.forEach(x=>t+=`- ${pname(x.f)}${x.why&&x.why.length?' : '+x.why.join(', ').replace(/<\/?b>/g,''):''}. À placer : ${(x.N.length?x.N.map(o=>S[o.s].n):x.sugg.map(y=>y.s.n)).slice(0,5).join(', ')||'—'}\n`)}}
   if(b.nv.length){t+=`\nMAGASINS À REVOIR (plus de 60 jours)\n`;b.nv.forEach(s=>t+=`- ${s.n} (${s.days==null?'aucune visite inscrite':s.days+' jours'})\n`)}
   return t+`\nDonnées EZFocus, période ${D.ref}.`}
 function noteText(s){const d=new Date().toLocaleDateString('fr-CA',{day:'numeric',month:'long',year:'numeric'});const keep=st.dt;st.dt='';const acts=actionsFor([s]);st.dt=keep;
