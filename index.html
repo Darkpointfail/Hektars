@@ -251,11 +251,12 @@ async function loadData(){
   const {data:sets}=await SB.from('product_settings').select('*');
   SETTINGS={};(sets||[]).forEach(r=>SETTINGS[r.fam_key]=r);
   // fusion des territoires visibles en un seul jeu de données
-  const sh=snap.shared;const D={ref:sh.ref,gen:sh.gen,labels:sh.labels,F:sh.F,net:sh.net,reps:[],S:[],O:[],OBL:[],agg:{},lost:[]};
+  const sh=snap.shared;const D={ref:sh.ref,gen:sh.gen,labels:sh.labels,F:sh.F,net:sh.net,reps:[],S:[],O:[],OBL:[],agg:{},lost:[],X:[],hasX:parts.length>0&&parts.every(p=>Array.isArray(p.payload.X))};
   parts.sort((a,b)=>a.rep_name.localeCompare(b.rep_name,'fr')).forEach(p=>{
     const ri=D.reps.length;D.reps.push(p.rep_name);const off=D.S.length;const pl=p.payload;
     pl.S.forEach(a=>D.S.push([a[0],a[1],a[2],ri,a[3],a[4],a[5],a[6],a[7],a[8],a[9],a[10],a[11],a[12],a[13],a[14],a[15]]));
     pl.O.forEach(o=>D.O.push([o[0]+off,...o.slice(1)]));
+    pl.S.forEach((_,k)=>D.X.push(pl.X?pl.X[k]||[]:null));
     pl.OBL.forEach(l=>D.OBL.push(l));
     Object.entries(pl.agg).forEach(([f,v])=>D.agg[f+'|'+ri]=v);
     (pl.lost||[]).forEach(l=>D.lost.push([l[0]+off,l[1],l[2]]));
@@ -329,7 +330,11 @@ const AGG={};Object.entries(D.agg).forEach(([k,v])=>AGG[k]=v);
 function famSeries(fi,ri){if(ri==null){const n=D.net[fi];return n?{t:n[0],l:n[1]}:{t:Array(13).fill(0),l:Array(13).fill(0)}}const t=Array(13).fill(0),l=Array(13).fill(0);D.reps.forEach((r,i)=>{if(ri!=null&&i!==ri)return;const a=AGG[fi+'|'+i];if(a)for(let k=0;k<13;k++){t[k]+=a[0][k];l[k]+=a[1][k]}});return {t,l}}
 document.getElementById('ref').textContent='période '+D.ref;
 let byStore,byFam;
+let SX;
 function reindex(){byStore=S.map(()=>[]);byFam=F.map(()=>[]);
+// ventes et stock par magasin et par produit : matrice complète si la synchro la fournit, sinon ce que disent les signaux
+SX=S.map((s,i)=>{const m=new Map();(D.X&&D.X[i]||[]).forEach(r=>m.set(r[0],{t13:r[1],l13:r[2],inv:r[3]}));return m});
+if(!D.hasX)D.O.forEach(o=>{if(!SX[o[0]].has(o[1]))SX[o[0]].set(o[1],{t13:o[3],l13:o[4],inv:o[7]})});
 D.O.forEach(o=>{const r={s:o[0],f:o[1],t:o[2],t13:o[3],l13:o[4],t3:o[5],l3:o[6],inv:o[7],p25:o[8],p50:o[9],np:o[10],v:o[11]};byFam[r.f].push(r);if(isActive(r.f))byStore[r.s].push(r)});
 S.forEach((s,i)=>{s.i=i;const c={O:0,L:0,R:0,P:0,D:0,A:0,S:0,V:0,N:0};let pot=0;byStore[i].forEach(o=>{c[o.t]++;if(o.t!=='D'&&o.t!=='V')pot+=o.v});s.c=c;s.invSusp=s.sku>0&&c.R/s.sku>0.6;s.pot=pot})}
 const TYPES={O:'OBL manquant',L:'Stock faible',V:'SL en vente',N:'SL à placer',R:'Rupture',P:'Inscription perdue',A:'À proposer',S:'Sous les pairs',D:'Stock dormant'};
@@ -1035,10 +1040,25 @@ function briefData(){const ms=myStores();const keep=st.dt;st.dt='';const all=act
   return {ms,todo,top:todo.slice(0,10),t13:sum('t13'),l13:sum('l13'),t3:sum('t3'),l3:sum('l3'),sl,nv,nSuivi:todo.filter(a=>a.cat==='suivi').length,nMarche:todo.filter(a=>a.cat==='marche').length}}
 const pctTx=r=>r==null?'—':(r>=0?'+':'')+nf0.format(r*100)+' %';
 
-function slSugg(f,ms){const out=[];const seen=new Set();
-  ms.forEach(s=>{const o=byStore[s.i].find(x=>x.f===f.i&&x.t==='N');if(o){seen.add(s.i);out.push({s,why:`absent, ${o.np} magasins comparables le vendent`,k:2,v:o.v||0})}});
-  ms.forEach(s=>{if(seen.has(s.i)||s.inactive||!(s.t3>0))return;if(byStore[s.i].some(x=>x.f===f.i&&(x.t==='V'||x.t==='D')))return;out.push({s,why:`gros vendeur Hektars : ${cs(s.t3)} cs sur 3 périodes`,k:1,v:s.t3})});
-  return out.sort((a,b)=>b.k-a.k||b.v-a.v).slice(0,12)}
+// Suggestion de magasins pour un SL : score sur 100 =
+//  40 % ventes d'articles semblables dans le magasin (prix proche, même catégorie ou couleur ; plus le prix est proche, plus ça compte)
+//  20 % ventes passées de ce produit dans le magasin (ancien lot)
+//  15 % ventes de ce produit dans la même ville (région qui marche)
+//  15 % volume Hektars du magasin (3 dernières périodes)
+//  10 % bannière Sélection ; +10 si EZFocus signale que des magasins comparables le vendent
+// Chaque critère est un rang centile parmi les magasins candidats (0 = le plus faible, 1 = le plus fort). Exclus : magasins avec du stock du produit.
+function slSim(f,g){if(g===f||!f.px||!g.px)return 0;const dp=Math.abs(Math.log(g.px/f.px));if(dp>.5)return 0;const c=f.cat&&g.cat===f.cat?1:f.color&&g.color===f.color?.5:0;return c*Math.exp(-dp/.2)}
+function slSugg(f,ms,n){const sims=[];F.forEach(g=>{const w=slSim(f,g);if(w>.05)sims.push([g.i,w])});
+  const cand=ms.filter(s=>!s.inactive&&s.t3>0&&!((SX[s.i].get(f.i)||{}).inv>0)&&!byStore[s.i].some(o=>o.f===f.i&&(o.t==='V'||o.t==='D')));
+  const city={};S.forEach(s=>{const x=SX[s.i].get(f.i);if(x)city[s.v]=(city[s.v]||0)+x.t13+x.l13});
+  const rows=cand.map(s=>{const m=SX[s.i];const x=m.get(f.i);let aff=0;sims.forEach(([gi,w])=>{const y=m.get(gi);if(y)aff+=w*y.t13});
+    const own=x?x.t13+x.l13:0;const cty=(city[s.v]||0)-own;const nO=byStore[s.i].find(o=>o.f===f.i&&o.t==='N');return {s,aff,own,cty,vol:s.t3,sel:s.ban==='SEL',nO}});
+  const rk=k=>{const v=rows.map(r=>r[k]).filter(x=>x>0).sort((a,b)=>a-b);return x=>x>0?(v.filter(y=>y<=x).length/v.length):0};
+  const ra=rk('aff'),ro=rk('own'),rc=rk('cty'),rv=rk('vol');
+  rows.forEach(r=>{r.score=Math.round(100*(.4*ra(r.aff)+.2*ro(r.own)+.15*rc(r.cty)+.15*rv(r.vol)+.1*(r.sel?1:0)+(r.nO?.1:0)));
+    r.why=`score ${r.score}/100 : `+[r.aff>0?`articles semblables ${cs(r.aff)} cs/an`:'',r.own>0?`ce produit s'y vendait (${cs(r.own)} cs)`:'',r.cty>0?`marche à ${r.s.v} (${cs(r.cty)} cs)`:'',r.nO?`${r.nO.np} magasins comparables le vendent`:'',`volume Hektars ${cs(r.vol)} cs/3 pér.`,r.sel?'Sélection':''].filter(Boolean).join(' · ');
+    r.k=r.score;r.v=r.score});
+  return rows.sort((a,b)=>b.score-a.score||b.vol-a.vol).slice(0,n||12)}
 function briefView(){const b=briefData();const first=st.rep.split(' ')[0];
   return previewNote(`Voici le courriel que chaque représentant recevrait le lundi matin, calculé à partir de l'export EZFocus. Ici, à partir de l'extraction du ${dataDate}.`)+`
   <div class="dfilters">${IS_ADMIN&&D.reps.length>1?`<label class="dfl"><span class="eyebrow">Représentant</span><select data-dashrep>${D.reps.map(r=>`<option${r===st.rep?' selected':''}>${esc(r)}</option>`).join('')}</select></label>`:''}</div>

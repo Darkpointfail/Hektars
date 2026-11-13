@@ -120,6 +120,8 @@
         S: idx.map(si => { const s = S[si]; return [s.no, s.n, s.v, s.ban, s.rang, s.lv, s.nv, s.days, R(s.t13), R(s.l13), R(s.t3), R(s.l3), s.inactive ? 1 : 0, s.pt.map(R), s.pl.map(R), s.sku]; }),
         O: O.filter(o => loc.has(o[0])).map(o => [loc.get(o[0]), ...o.slice(1)]),
         OBL: idx.map(si => Object.entries(M[si]).filter(([, g]) => g.obl).map(([f]) => +f)),
+        // ventes et stock par magasin et par produit (pour suggérer où placer un SL)
+        X: idx.map(si => Object.entries(M[si]).filter(([, g]) => g.t13 > 0 || g.l13 > 0 || g.inv > 0).map(([f, g]) => [+f, R(g.t13), R(g.l13), Math.round(g.inv)])),
         agg: Object.fromEntries(Object.entries(agg).filter(([k]) => k.endsWith('|' + rep)).map(([k, v]) => [k.split('|')[0], rr(v)])),
         lost: idx.flatMap(si => (lostRaw[S[si].no] || []).map(id => [loc.get(si), fOf(id), R((M[si][fOf(id)] || Z).t13)]))
       };
