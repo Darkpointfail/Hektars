@@ -123,7 +123,7 @@ ul.checks label{display:flex;gap:10px;flex:1;min-width:0;cursor:pointer}ul.check
 ul.checks input:checked+.body .t{text-decoration:line-through;color:var(--muted)}
 .chips{display:flex;flex-wrap:wrap;gap:6px}.pick{font:inherit;font-size:.8rem;padding:6px 10px;border-radius:99px;border:1px solid var(--line);background:var(--surface);color:var(--ink);cursor:pointer;display:inline-flex;gap:6px;align-items:center}.pick:hover{border-color:var(--accent)}.pick.on{background:var(--accent-soft);border-color:var(--accent);color:var(--accent);font-weight:600}
 .prog{height:6px;border-radius:3px;background:var(--sunk);overflow:hidden;margin-top:6px}.prog i{display:block;height:100%;background:var(--accent)}
-.agrp.fin{opacity:.6}input.txt{font:inherit;font-size:1rem;width:100%;max-width:480px;padding:10px 12px;border-radius:8px;border:1px solid var(--line);background:var(--surface);color:var(--ink)}
+.agrp.fin{opacity:.6}textarea.txt{resize:vertical;font-family:inherit}input.txt,textarea.txt{font:inherit;font-size:1rem;width:100%;max-width:480px;padding:10px 12px;border-radius:8px;border:1px solid var(--line);background:var(--surface);color:var(--ink)}
 .seg.res{margin-top:8px}.seg.res button{font-size:.76rem;padding:5px 10px}
 .seg.res .r-cmd[aria-pressed=true]{background:var(--good);border-color:var(--good);color:#fff}.seg.res .r-prom[aria-pressed=true]{background:var(--S);border-color:var(--S);color:#fff}.seg.res .r-non[aria-pressed=true]{background:var(--R);border-color:var(--R);color:#fff}.seg.res .r-nr[aria-pressed=true]{background:var(--P);border-color:var(--P);color:#fff}
 .slform{display:flex;flex-wrap:wrap;gap:14px}.slform label{display:flex;flex-direction:column;gap:6px;font-size:.78rem;font-weight:600;color:var(--muted)}.slform select,.slform input{font:inherit;font-size:.95rem;padding:9px 10px;border-radius:8px;border:1px solid var(--line);background:var(--surface);color:var(--ink);min-width:200px}
@@ -504,7 +504,7 @@ async function saveSess(x,isNew){if(SESS_LOCAL){if(isNew)SESS.unshift(x);LS.set(
   if(error){toast('Session non enregistrée : '+error.message);return false}
   if(isNew)SESS.unshift(data);else Object.assign(x,data);return true}
 const sessOf=id=>SESS.find(x=>String(x.id)===String(id));
-const curProducts=()=>{const x=st.sess&&st.sess!=='new'?sessOf(st.sess):null;return x?x.products:st.calls};
+const curProducts=()=>{if(st.sess==='mail')return st.mail.products;const x=st.sess&&st.sess!=='new'?sessOf(st.sess):null;return x?x.products:st.calls};
 function sessRows(x){const ms=S.filter(s=>s.rep===x.rep_name&&!s.inactive);
   if(x.plan){const f=F.find(y=>fk(y)===x.products[0]);if(!f)return [];return ms.filter(s=>x.plan[s.no]).map(s=>({s,it:[{o:{t:'SLP',v:x.plan[s.no],s:s.i,f:f.i},f,k:'sess:'+x.id+'|'+s.no+'|'+fk(f)+'|SLP'}],v:x.plan[s.no]})).sort((a,b)=>b.v-a.v)}
   const sel=F.filter(f=>x.products.includes(fk(f)));
@@ -522,7 +522,7 @@ const resKpis=n=>`<div class="kpi"><span>Commandé</span><b style="color:var(--g
 function productPicker(){const ms=myStores();const cur=curProducts();const sel=F.filter(f=>cur.includes(fk(f)));
   const q=(st.cq||'').normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase();
   const cand=F.filter(f=>isActive(f.i)&&(!st.dt||prodType(f)===st.dt)).map(f=>({f,n:ms.filter(s=>callOps(s,f).length).length}))
-    .filter(x=>(q?(x.f.n+' '+x.f.codes.join(' ')).normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase().includes(q):x.n>0)).sort((a,b)=>b.n-a.n).slice(0,q?30:15);
+    .filter(x=>(q?(x.f.n+' '+x.f.codes.join(' ')).normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase().includes(q):(st.sess==='mail'||x.n>0))).sort((a,b)=>b.n-a.n||b.f.t3-a.f.t3).slice(0,q?30:15);
   return `${sel.length?`<div class="chips">${sel.map(f=>`<button class="pick on" data-callf="${f.i}">${esc(pname(f))} ${typeChip(f)} <span aria-hidden="true">×</span></button>`).join('')}</div>`:''}
     <div class="filters"><input type="search" id="cq" placeholder="Chercher un produit (nom ou code SAQ)…" value="${esc(st.cq||'')}" aria-label="Chercher un produit">
     <div class="seg" role="group" aria-label="Type">${DT.map(([k,lb])=>`<button data-dt="${k}" aria-pressed="${(st.dt||'')===k}">${lb}</button>`).join('')}</div></div>
@@ -568,9 +568,43 @@ function slCards(){return SLL.map(x=>{const g=slProgress(x);if(!g)return '';cons
   return `<li><div class="body"><span class="t">${esc(pname(g.f))}</span> <span class="chip c-SL">SL</span><div class="w">${nf0.format(x.qty)} cs reçues · arrivée ${esc(x.period)} · objectif ${nf0.format(g.target)} cs en 6 semaines · ${g.sold==null?'ventes visibles à la prochaine mise à jour EZFocus':`${cs(g.sold)} cs vendues depuis l'arrivée (${nf0.format(g.pct*100)} % de l'objectif)`}</div>
     <div class="prog"><i style="width:${pct==null?0:pct*100}%;background:${pct!=null&&pct>=1?'var(--good)':'var(--accent)'}"></i></div></div></li>`}).join('')}
 
+// ---------- Rédaction de courriel (gabarits à partir des données, sans IA) ----------
+const KINDS=[['auto','Selon le produit'],['sl','Lancement SL (lot limité)'],['place','Proposer une inscription'],['relance','Relancer une inscription perdue'],['rupture','Rupture : recommander']];
+function mailDraft(){const m=st.mail;const fs=F.filter(f=>m.products.includes(fk(f)));if(!fs.length)return null;
+  const s0=m.store?S.find(x=>x.no===m.store):null;const sx=m.sess?sessOf(m.sess):null;
+  const kind=m.kind!=='auto'?m.kind:fs.every(f=>prodType(f)==='SL')?'sl':(s0&&fs.some(f=>byStore[s0.i].some(o=>o.f===f.i&&o.t==='P')))?'relance':(s0&&fs.some(f=>byStore[s0.i].some(o=>o.f===f.i&&(o.t==='R'||o.t==='O'||o.t==='L'))))?'rupture':'place';
+  const names=fs.map(f=>f.n).join(', ');const me=(ME.rep_name||'').split(' ')[0];
+  const subj={sl:`Lot limité : ${names}`,place:`Proposition : ${names}`,relance:`Retour en tablette : ${names}`,rupture:`Recommande : ${names}`}[kind];
+  const intro={sl:`Je vous écris au sujet d'une nouveauté en lot limité (SL) chez Hektars. Les quantités sont limitées et partent vite : je voulais vous la proposer en priorité.`,
+    place:`Je me permets de vous proposer ${fs.length>1?'quelques produits':'un produit'} de notre portefeuille qui ${fs.length>1?'fonctionnent':'fonctionne'} bien dans des succursales comparables à la vôtre.`,
+    relance:`Je fais un suivi : ${fs.length>1?'ces produits se vendaient':'ce produit se vendait'} bien chez vous et n'${fs.length>1?'y sont':'y est'} plus en tablette depuis quelques périodes. Je vous propose de ${fs.length>1?'les':'le'} remettre.`,
+    rupture:`Je vois que ${fs.length>1?'ces produits sont':'ce produit est'} en rupture ou presque chez vous alors qu'${fs.length>1?'ils se vendent':'il se vend'} bien. Serait-il possible de recommander ?`}[kind];
+  const PAYS={CHILE:'Chili',FRANCE:'France',GERMANY:'Allemagne',HUNGARY:'Hongrie','SOUTH AFRICA':'Afrique du Sud',SPAIN:'Espagne',ITALY:'Italie',PORTUGAL:'Portugal',ARGENTINA:'Argentine',AUSTRALIA:'Australie','NEW ZEALAND':'Nouvelle-Zélande','UNITED STATES':'États-Unis',CANADA:'Canada'};const cap=t=>t?(PAYS[t.toUpperCase()]||t.charAt(0)+t.slice(1).toLowerCase()):'';const line=f=>{const bits=[`${pname(f)}`,[f.app,cap(f.pays)].filter(Boolean).join(', ')||null,f.px?`${f.px.toLocaleString('fr-CA',{minimumFractionDigits:2,maximumFractionDigits:2})} $`:null,prodType(f)?prodType(f):null,f.codes&&f.codes[0]?`code SAQ ${f.codes[0]}`:null].filter(Boolean).join(' · ');
+    const p=pitchOf(f);const ex=[];
+    if(s0){const o=byStore[s0.i].find(o=>o.f===f.i);if(o){if(o.t==='A'||o.t==='N')ex.push(`Déjà vendu dans ${o.np} succursales comparables à la vôtre.`);if(o.t==='P')ex.push(`Il s'en vendait jusqu'à ${cs(Math.max(o.t13,o.l13))} caisses par an chez vous.`);if(o.t==='R'||o.t==='O')ex.push(`${cs(o.t3)} caisses vendues chez vous sur les 3 dernières périodes, plus de stock au dernier relevé.`);if(o.t==='L')ex.push(`Il ne reste que ${nf0.format(o.inv)} unités en stock.`)}
+      if(sx&&sx.plan&&sx.plan[s0.no]&&fk(f)===sx.products[0])ex.push(`Je vous propose ${cs(sx.plan[s0.no])} caisse${sx.plan[s0.no]>1?'s':''}.`)}
+    else if(f.nT3)ex.push(`En vente actuellement dans ${f.nT3} succursales.`);
+    const L=SLL.find(x=>x.fam_key===fk(f));if(kind==='sl'&&L)ex.push(`Lot de ${nf0.format(L.qty)} caisses pour tout le Québec.`);
+    return `• ${bits}${p?`\n  ${p}`:''}${ex.length?`\n  ${ex.join(' ')}`:''}`};
+  const outro={sl:`Souhaitez-vous que je vous en réserve ? Je peux passer vous le faire goûter cette semaine.`,place:`Seriez-vous ouvert à l'inscrire ? Je peux passer vous le faire goûter.`,relance:`Voulez-vous que je m'occupe de la commande ?`,rupture:`Merci de me confirmer quand la commande est passée.`}[kind];
+  const body=`Bonjour${s0?` à l'équipe de la SAQ ${s0.n}`:''},\n\n${intro}\n\n${fs.map(line).join('\n\n')}\n\n${outro}\n\nAu plaisir,\n${ME.rep_name}\nHektars`;
+  return {kind,subj,body}}
+function mailView(){const m=st.mail;const d=mailDraft();const sx=m.sess?sessOf(m.sess):null;
+  const stores=sx?sessRows(sx).map(r=>r.s):myStores().slice().sort((a,b)=>a.n.localeCompare(b.n,'fr'));
+  if(d&&!st.mailEdit)st.mailEdit={subj:d.subj,body:d.body};const e=st.mailEdit||{subj:'',body:''};
+  return `<div class="head"><div><span class="eyebrow">${sx?'Session : '+esc(sx.name):'Courriel'}</span><h1>Rédiger un courriel</h1><p class="muted" style="margin:4px 0 0;max-width:72ch">Choisis les produits dont tu veux parler (et le magasin si tu veux un courriel personnalisé) : le texte est rédigé à partir des données EZFocus et des pitchs de la fiche produit. Tu peux le modifier avant de l'envoyer.</p></div><button class="btn" data-mailback>Retour</button></div>
+  <section class="panel"><div class="panel-h"><h2>1. Produits</h2></div><div class="pad" style="display:flex;flex-direction:column;gap:12px">${productPicker()}</div></section>
+  <section class="panel"><div class="pad slform">
+    <label>Magasin (facultatif)<select data-mailstore><option value="">Courriel général</option>${stores.map(x=>`<option value="${x.no}"${x.no===m.store?' selected':''}>${esc(x.n)} (${x.no})</option>`).join('')}</select></label>
+    <label>Type de courriel<select data-mailkind>${KINDS.map(([k,l])=>`<option value="${k}"${k===m.kind?' selected':''}>${l}${k==='auto'&&d?' : '+(KINDS.find(x=>x[0]===d.kind)||['',''])[1]:''}</option>`).join('')}</select></label></div></section>
+  ${d?`<section class="panel"><div class="panel-h"><h2>2. Courriel</h2><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn sm" data-mailregen>Régénérer</button><button class="btn sm" data-mailcopy>Copier</button><a class="btn sm primary" href="mailto:?subject=${encodeURIComponent(e.subj)}&body=${encodeURIComponent(e.body)}">Ouvrir dans ma messagerie</a></div></div>
+   <div class="pad" style="display:flex;flex-direction:column;gap:10px"><input class="txt" id="mailsubj" style="max-width:none" value="${esc(e.subj)}" aria-label="Objet"><textarea id="mailbody" class="txt" rows="18" style="max-width:none;font-size:.92rem;line-height:1.5">${esc(e.body)}</textarea>
+   ${F.filter(f=>m.products.includes(fk(f))&&!pitchOf(f)).length?`<p class="muted" style="font-size:.78rem;margin:0">Astuce : ajoute un pitch sur la fiche produit (${F.filter(f=>m.products.includes(fk(f))&&!pitchOf(f)).map(f=>esc(f.n)).join(', ')}) pour l'inclure automatiquement.</p>`:''}</div></section>`:'<div class="panel empty">Choisis au moins un produit.</div>'}`}
+
 function callView(){
   if(st.sess==='new')return newSessView();
   if(st.sess==='sl')return slNewView();
+  if(st.sess==='mail')return mailView();
   if(st.sess&&sessOf(st.sess))return sessView(sessOf(st.sess));
   const mine=SESS.filter(x=>IS_ADMIN?x.rep_name===st.rep:x.rep_name===ME.rep_name);
   const stats=mine.map(x=>({x,...sessStats(x)}));const open=stats.filter(y=>!y.x.closed_at);const tot={cmd:0,prom:0,non:0,nr:0};stats.forEach(y=>Object.keys(tot).forEach(k=>tot[k]+=y.n[k]||0));
@@ -579,7 +613,7 @@ function callView(){
   const card=y=>{const pct=y.items?Math.round(y.done/y.items*100):0;return `<li><div class="body"><button class="lnk t" data-opensess="${y.x.id}">${esc(y.x.name)}</button> ${y.x.closed_at?'<span class="chip">Terminée</span>':'<span class="chip c-SA">En cours</span>'}
     <div class="w">${fdate(y.x.created_at)}${y.x.created_by?' · par '+esc(y.x.created_by):''} · ${y.x.products.length} produit${y.x.products.length>1?'s':''} · ${y.done}/${y.items} appels faits · ${y.n.cmd} commandé${y.n.cmd>1?'s':''}, ${y.n.prom} promesse${y.n.prom>1?'s':''}, ${y.n.non} pas commandé${y.n.non>1?'s':''}, ${y.n.nr} pas répondu · taux ${pctTxt(y.rate)}</div>
     <div class="prog"><i style="width:${pct}%"></i></div></div><button class="btn sm" data-opensess="${y.x.id}">Ouvrir</button></li>`};
-  return `<div class="head"><div><span class="eyebrow">Territoire de ${esc(st.rep)} · EZFocus période ${D.ref}</span><h1>Sessions d'appels</h1><p class="muted" style="margin:4px 0 0;max-width:72ch">Crée une session avec le ou les produits à vendre : l'outil sort les magasins à appeler, triés par caisses en jeu. Note le résultat de chaque appel pour suivre tes stats.</p></div><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn" data-slnew>Planifier un SL</button><button class="btn primary" data-newsess>Nouvelle session</button></div></div>
+  return `<div class="head"><div><span class="eyebrow">Territoire de ${esc(st.rep)} · EZFocus période ${D.ref}</span><h1>Sessions d'appels</h1><p class="muted" style="margin:4px 0 0;max-width:72ch">Crée une session avec le ou les produits à vendre : l'outil sort les magasins à appeler, triés par caisses en jeu. Note le résultat de chaque appel pour suivre tes stats.</p></div><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn" data-mailnew>Rédiger un courriel</button><button class="btn" data-slnew>Planifier un SL</button><button class="btn primary" data-newsess>Nouvelle session</button></div></div>
   <div class="kpis">${kpi('Sessions',mine.length,'au total')}${kpi('En cours',open.length,'à terminer')}${kpi('Ce mois-ci',month.length,'sessions créées')}${kpi('Appels faits',stats.reduce((a,y)=>a+y.done,0),'sur '+stats.reduce((a,y)=>a+y.items,0)+' prévus')}${kpi('Taux de commande',pctTxt((()=>{const t=tot.cmd+tot.prom+tot.non;return t?tot.cmd/t:null})()),'commandés sur appels aboutis')}</div>
   <div class="kpis">${resKpis(tot)}</div>
   ${SESS_LOCAL?'<p class="muted" style="font-size:.8rem;margin:0">Les sessions sont gardées sur cet appareil seulement tant que la table Supabase n\'est pas créée.</p>':''}
@@ -592,7 +626,7 @@ function newSessView(){const n=st.calls.length;
   <div><button class="btn primary" data-createsess${n?'':' disabled'}>Créer la session${n?` (${n} produit${n>1?'s':''})`:''}</button></div>`}
 function sessView(x){const y=sessStats(x);const pct=y.items?Math.round(y.done/y.items*100):0;const txt=o=>{const t=CALLTXT[o.t];return typeof t==='function'?t(o):t};
   return `<div class="head"><div><span class="eyebrow">Session de ${esc(x.rep_name)} · créée le ${fdate(x.created_at)}${x.closed_at?' · terminée le '+fdate(x.closed_at):''}</span><h1>${esc(x.name)}</h1></div>
-   <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn" data-sessback>Toutes les sessions</button>${x.closed_at?'<button class="btn" data-reopensess>Rouvrir</button>':'<button class="btn primary" data-closesess>Terminer la session</button>'}</div></div>
+   <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn" data-sessback>Toutes les sessions</button><button class="btn" data-mailsess="${x.id}">Rédiger un courriel</button>${x.closed_at?'<button class="btn" data-reopensess>Rouvrir</button>':'<button class="btn primary" data-closesess>Terminer la session</button>'}</div></div>
   <div class="kpis"><div class="kpi"><span>Avancement</span><b>${pct} %</b><div class="prog"><i style="width:${pct}%"></i></div></div><div class="kpi"><span>Appels faits</span><b>${y.done}</b><span>sur ${y.items}</span></div><div class="kpi"><span>Magasins terminés</span><b>${y.stores}</b><span>sur ${y.nStores}</span></div><div class="kpi"><span>Taux de commande</span><b>${pctTxt(y.rate)}</b><span>commandés sur appels aboutis</span></div></div>
   <div class="kpis">${resKpis(y.n)}</div>
   <details class="panel"${x.products.length?'':' open'}><summary class="panel-h" style="cursor:pointer"><h2 style="display:inline">Produits de la session (${x.products.length})</h2></summary><div class="pad" style="display:flex;flex-direction:column;gap:12px">${productPicker()}</div></details>
@@ -729,17 +763,21 @@ function fromHash(){const h=location.hash.slice(1);st.page=PAGES[h]?h:'route';st
 window.addEventListener('hashchange',fromHash);
 function openFam(i){st.fam=+i;if(st.page!=='produits'){st.page='produits';history.replaceState(null,'','#produits')}render();window.scrollTo(0,0)}
 function saveRoute(){LS.set(routeKey(),getRoute())}
-document.addEventListener('click',e=>{const t=e.target.closest('[data-gcal],[data-dt],[data-callf],[data-newsess],[data-slnew],[data-sllaunch],[data-res],[data-resall],[data-sessback],[data-opensess],[data-createsess],[data-closesess],[data-reopensess],[data-atab],[data-more],[data-calrefresh],[data-pact],[data-setact],[data-fam],[data-back],[data-ptype],[data-color],[data-settype],[data-savepitch],[data-rmphoto],[data-photo],[data-rm],[data-copystop],[data-copyday],[data-addroute]');if(!t)return;const d=t.dataset;
+document.addEventListener('click',e=>{const t=e.target.closest('[data-gcal],[data-dt],[data-callf],[data-newsess],[data-mailnew],[data-mailsess],[data-mailback],[data-mailregen],[data-mailcopy],[data-slnew],[data-sllaunch],[data-res],[data-resall],[data-sessback],[data-opensess],[data-createsess],[data-closesess],[data-reopensess],[data-atab],[data-more],[data-calrefresh],[data-pact],[data-setact],[data-fam],[data-back],[data-ptype],[data-color],[data-settype],[data-savepitch],[data-rmphoto],[data-photo],[data-rm],[data-copystop],[data-copyday],[data-addroute]');if(!t)return;const d=t.dataset;
   if(d.pact!=null){st.pact=d.pact;render();return}
   if(d.setact!=null){saveSet(F[st.fam],{active:d.setact==='1'},d.setact==='1'?'Produit actif : il revient dans les recommandations':'Produit inactif : retiré des recommandations');return}
   if(d.fam!=null)return openFam(d.fam);
   if(d.back!=null){st.fam=null;render();return}
   if(d.ptype!=null){st.ptype=d.ptype;render();return}
   if(d.dt!=null){st.dt=d.dt;st.more=0;LS.set('dt',d.dt);render();return}
-  if(d.callf!=null){const k=fk(F[+d.callf]);const x=st.sess&&st.sess!=='new'?sessOf(st.sess):null;const a=x?x.products:st.calls;const i=a.indexOf(k);if(i>=0)a.splice(i,1);else a.push(k);
-    if(x)saveSess(x,false).then(render);else{LS.set('calls',a);render()}return}
+  if(d.callf!=null){const k=fk(F[+d.callf]);const x=st.sess&&st.sess!=='new'&&st.sess!=='mail'?sessOf(st.sess):null;const a=st.sess==='mail'?st.mail.products:x?x.products:st.calls;const i=a.indexOf(k);if(i>=0)a.splice(i,1);else a.push(k);
+    if(x)saveSess(x,false).then(render);else{if(st.sess!=='mail')LS.set('calls',a);st.mailEdit=null;render()}return}
   if(d.res){const cur=resOf(d.k);setResults([d.k],cur===d.res?null:d.res);return}
   if(d.resall){setResults(d.keys.split(';;').filter(k=>!isFin(k)),d.resall);return}
+  if(d.mailnew!=null||d.mailsess!=null){const x=d.mailsess!=null?sessOf(d.mailsess):null;st.mailBack=st.sess;st.mail={products:x?x.products.slice():[],store:'',kind:'auto',sess:x?x.id:null};st.mailEdit=null;st.sess='mail';render();window.scrollTo(0,0);return}
+  if(d.mailback!=null){st.sess=st.mailBack||null;render();window.scrollTo(0,0);return}
+  if(d.mailregen!=null){st.mailEdit=null;render();return}
+  if(d.mailcopy!=null){const t=document.getElementById('mailsubj').value+'\n\n'+document.getElementById('mailbody').value;(navigator.clipboard?navigator.clipboard.writeText(t):Promise.reject()).then(()=>toast('Courriel copié'),()=>{const ta=document.getElementById('mailbody');ta.select();document.execCommand('copy');toast('Courriel copié')});return}
   if(d.slnew!=null){st.sess='sl';render();window.scrollTo(0,0);return}
   if(d.sllaunch!=null){const f=F.find(y=>fk(y)===st.slf);const qty=+st.slq;const p=slPlan(f,qty);const period=st.slp||'Prochaine';
     (async()=>{if(!await saveSL({fam_key:fk(f),qty,period,created_by:ME.rep_name.split(' ')[0],created_at:new Date().toISOString()}))return;
@@ -768,8 +806,10 @@ document.addEventListener('click',e=>{const t=e.target.closest('[data-gcal],[dat
   if(d.copyday!=null)return copy(getRoute().stops.map(no=>stopText(S.find(s=>s.no===no))).join('\n\n'));
 });
 document.addEventListener('keydown',e=>{if(e.key==='Enter'&&e.target.matches('tr[data-fam]'))openFam(e.target.dataset.fam)});
-document.addEventListener('input',e=>{if(e.target.id==='sessname')st.sessName=e.target.value;if(e.target.id==='slq'){st.slq=e.target.value;clearTimeout(st.slqt);st.slqt=setTimeout(()=>{render();const q=document.getElementById('slq');if(q){q.focus();q.setSelectionRange(q.value.length,q.value.length)}},400)}if(e.target.id==='pq'){st.q=e.target.value;render(true)}if(e.target.id==='cq'){st.cq=e.target.value;render(true)}});
+document.addEventListener('input',e=>{if(e.target.id==='sessname')st.sessName=e.target.value;if((e.target.id==='mailsubj'||e.target.id==='mailbody')&&st.mailEdit){st.mailEdit[e.target.id==='mailsubj'?'subj':'body']=e.target.value;const a=document.querySelector('a[href^="mailto:"]');if(a)a.href='mailto:?subject='+encodeURIComponent(st.mailEdit.subj)+'&body='+encodeURIComponent(st.mailEdit.body)}if(e.target.id==='slq'){st.slq=e.target.value;clearTimeout(st.slqt);st.slqt=setTimeout(()=>{render();const q=document.getElementById('slq');if(q){q.focus();q.setSelectionRange(q.value.length,q.value.length)}},400)}if(e.target.id==='pq'){st.q=e.target.value;render(true)}if(e.target.id==='cq'){st.cq=e.target.value;render(true)}});
 document.addEventListener('change',e=>{
+  if(e.target.matches&&e.target.matches('[data-mailstore]')){st.mail.store=e.target.value;st.mailEdit=null;render();return}
+  if(e.target.matches&&e.target.matches('[data-mailkind]')){st.mail.kind=e.target.value;st.mailEdit=null;render();return}
   if(e.target.matches&&e.target.matches('[data-slf]')){st.slf=e.target.value;render();return}
   if(e.target.matches&&e.target.matches('[data-slp]')){st.slp=e.target.value;render();return}
   if(e.target.dataset&&e.target.dataset.act!=null){toggleDone(e.target.dataset.act,e.target.checked);return}
