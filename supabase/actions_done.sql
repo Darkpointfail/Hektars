@@ -58,3 +58,6 @@ create table if not exists public.tastings(
 alter table public.tastings enable row level security;
 drop policy if exists tastings_all on public.tastings;
 create policy tastings_all on public.tastings for all to authenticated using (public.is_admin() or rep_name = (public.me()).rep_name) with check (public.is_admin() or rep_name = (public.me()).rep_name);
+
+-- Statut des SL (à vendre / à venir / ancien), remplace la feuille Inventaire SL
+alter table public.product_settings add column if not exists sl_status text check (sl_status in ('actif','avenir','ancien'));

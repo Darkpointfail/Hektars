@@ -1,6 +1,6 @@
 # Hektars Terrain
 
-Outil terrain des représentants Hektars : Sur la route, Dashboard (actions urgentes et analyse des pertes), Produits (type SAQ, statut actif, pitch, photos) et Performances.
+Outil terrain des représentants Hektars : Aujourd'hui (journée et actions urgentes), Appels et SL (sessions, lancements SL, courriels), Dégustations, Produits (type SAQ, statut SL, pitch, photos) et Brief du lundi. Les ventes et courbes restent dans EZFocus.
 
 - `index.html` : l'application (page statique, aucune compilation).
 - `config.js` : adresse du projet Supabase et clé publique (publishable).

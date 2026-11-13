@@ -191,13 +191,12 @@ code.bm{display:block;font:12px/1.45 var(--f-mono);background:var(--sunk);paddin
 <aside class="side">
   <div class="brand"><span class="mark"><img src="img/mark.png" alt=""></span><span><b>Hektars</b><small>Terrain</small></span></div>
   <nav class="tabs" aria-label="Pages">
-    <a href="#route" data-p="route"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21s-7-6.2-7-12a7 7 0 0 1 14 0c0 5.8-7 12-7 12z"/><circle cx="12" cy="9" r="2.5"/></svg>Sur la route</a>
-    <a href="#dashboard" data-p="dashboard"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg>Dashboard</a>
-    <a href="#appels" data-p="appels"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2"/></svg>Appels</a>
-    <a href="#degust" data-p="degust"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 3h10l-1 7a4 4 0 0 1-8 0L7 3z"/><path d="M12 14v6M8 21h8"/></svg>Dégustations</a>
+    <a href="#aujourdhui" data-p="aujourdhui"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21s-7-6.2-7-12a7 7 0 0 1 14 0c0 5.8-7 12-7 12z"/><circle cx="12" cy="9" r="2.5"/></svg>Aujourd'hui</a>
+    <a href="#appels" data-p="appels"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2"/></svg>Appels et SL</a>
+    <a href="#degust" data-p="degust"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 2h8l-1 7a3 3 0 0 1-6 0z"/><path d="M12 12v8M8 21h8"/></svg>Dégustations</a>
     <a href="#produits" data-p="produits"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 2h4v5l2 3v12H8V10l2-3V2z"/></svg>Produits</a>
-    <a href="#synchro" data-p="synchro" id="navsync" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 11a8 8 0 0 0-14.9-3M4 13a8 8 0 0 0 14.9 3"/><path d="M4 4v4h4M20 20v-4h-4"/></svg>Synchroniser</a>
-    <a href="#perf" data-p="perf"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 17l5-5 4 4 8-8"/><path d="M15 8h5v5"/></svg>Performances</a>
+    <a href="#brief" data-p="brief"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/></svg>Brief du lundi</a>
+    <a href="#synchro" data-p="synchro" id="navsync" hidden></a>
   </nav>
   <div class="side-foot">
     <div class="who"><span class="avatar" id="avatar"></span><label for="rep"><span>Représentant</span><select id="rep"></select></label></div>
@@ -376,7 +375,7 @@ async function saveSet(f,patch,msg){const key=fk(f);const row={...(SETTINGS[key]
 const ro=IS_ADMIN?'':' disabled';
 
 // state
-const st={rep:IS_ADMIN?LS.get('rep',ME.rep_name):ME.rep_name,page:'route',fam:null,q:'',color:'',ptype:'',route:null,dt:LS.get('dt',''),calls:LS.get('calls',[]),cq:''};
+const st={rep:IS_ADMIN?LS.get('rep',ME.rep_name):ME.rep_name,page:'aujourdhui',fam:null,q:'',color:'',ptype:'',route:null,dt:LS.get('dt',''),calls:LS.get('calls',[]),cq:''};
 const reps=D.reps;
 const repSel=document.getElementById('rep');
 repSel.innerHTML=reps.map(r=>`<option${r===st.rep?' selected':''}>${esc(r)}</option>`).join('');
@@ -443,9 +442,8 @@ function stopCard(s,time){const g=goals(s);const g13=gr(s.t13,s.l13);
     return `<li><span class="chip c-${t}">${TYPES[t]}</span><div class="body"><button class="lnk t" data-fam="${f.i}">${esc(pname(f))}</button> ${typeChip(f)}${isObl(s.i,f.i)?' <span class="chip c-O">OBL</span>':''}<div class="w">${why(o)}</div>${p&&(t==='A'||t==='P')?`<div class="pitch"><b>Pitch :</b> ${esc(p.length>180?p.slice(0,180)+'…':p)}</div>`:''}</div>${t!=='D'?`<span class="v">${money(o.v)}</span>`:''}</li>`}).join('')}</ul>`:'';
   return `<article class="stop"><div class="stop-h"><div class="meta"><h2>${time?`<span class="chip" style="margin-right:8px;vertical-align:3px">${esc(time)}</span>`:''}${esc(s.n)}</h2><span class="muted" style="font-size:.82rem">${esc(s.v)} · ${BAN[s.ban]} · n° ${s.no} · rang SAQ ${s.rang}</span></div>
     <div style="display:flex;flex-direction:column;gap:6px;align-items:flex-end"><div class="stop-stats"><span>R13 <b>${nf0.format(s.t13)} cs</b> ${pctH(g13)}</span><span>Dernière visite <b>${s.days==null?'jamais':s.days+' j'}</b></span><span>Potentiel <b>${money(s.pot)}</b></span></div>
-    <div style="display:flex;gap:6px"><button class="btn sm" data-copystop="${s.i}">Copier la liste</button><button class="btn sm" data-rm="${s.no}">Retirer</button></div></div></div>
+    <div style="display:flex;gap:6px"><button class="btn sm" data-copystop="${s.i}">Copier la liste</button><button class="btn sm" data-note="${s.i}">Note EZFocus</button><button class="btn sm" data-rm="${s.no}">Retirer</button></div></div></div>
     ${s.invSusp?'<div class="goal" style="color:var(--P)">Inventaire à vérifier : plus de 60 % des produits sont sans stock, ruptures non listées.</div>':''}
-    <div class="pad" style="padding-bottom:0">${lineChart(s.pt,s.pl,'Ventes Hektars du magasin par période (cs)',true)}</div>
     <div class="goal" style="font-weight:500;color:var(--muted)">${OBLSET[s.i].size} produits Hektars OBL (planogramme) dans ce magasin${g.O.length?'':', tous en stock'}.</div>
     ${sec('O','OBL à remettre : faute du magasin',g.O)}${sec('L','OBL en stock faible',g.L)}${sec('R','Faire recommander',g.R)}${sec('P','Inscriptions perdues à relancer',g.P)}${sec('A','Proposer',g.A)}${sec('S','Pousser',g.S)}
     ${!g.O.length&&!g.L.length&&!g.R.length&&!g.P.length&&!g.A.length&&!g.S.length?'<div class="empty">Aucun signal dans ce magasin. Visite de maintien.</div>':''}</article>`}
@@ -483,18 +481,16 @@ function dashView(){const ms=myStores();const all=actionsFor(ms);
   const typePick=`<div class="dfl"><span class="eyebrow">Type de produit</span><div class="seg dtbar" role="group" aria-label="Type de produit">${DT.map(([k,lb])=>`<button data-dt="${k}" aria-pressed="${(st.dt||'')===k}">${lb}</button>`).join('')}</div></div>`;
   const slNote=st.dt==='SL'&&!all.length?'<p class="muted" style="font-size:.8rem;margin:0">Les données actuelles ne contiennent pas encore le stock SL par magasin : les actions SL apparaîtront après la prochaine mise à jour EZFocus.</p>':'';
   return `<div class="dfilters">${repPick}${typePick}</div>
-  <div class="head"><div><span class="eyebrow">Territoire de ${esc(st.rep)} · ${ms.length} magasins · EZFocus période ${D.ref}, extrait le ${dataDate}</span><h1>Actions à faire</h1><p class="muted" style="margin:4px 0 0;max-width:72ch">${GOALS[st.dt||'']}</p></div></div>
-  <div class="kpis">${kpi('Ventes 13 périodes',nf0.format(t13)+' cs',pctH(gr(t13,l13))+' vs an passé')}${kpi('Tendance 3 périodes',nf0.format(t3)+' cs',pctH(gr(t3,l3))+' vs an passé',t3<l3)}
-   ${kpi('Suivi des ventes',cnt('suivi'),'actions à faire',cnt('suivi')>0)}${kpi('Marché potentiel',cnt('marche'),'actions à faire')}${kpi('Faites',fin.length,'sur '+all.length+' actions'+(DONE_LOCAL?' (sur cet appareil)':''))}</div>
+  <div class="head"><div><span class="eyebrow">Territoire de ${esc(st.rep)} · ${ms.length} magasins · EZFocus période ${D.ref}, extrait le ${dataDate}</span><h2 style="font:800 1.35rem var(--f-display);margin:0">Actions urgentes du territoire</h2><p class="muted" style="margin:4px 0 0;max-width:72ch">${GOALS[st.dt||'']}</p></div></div>
+  <div class="kpis">${kpi('Suivi des ventes',cnt('suivi'),'actions à faire',cnt('suivi')>0)}${kpi('Marché potentiel',cnt('marche'),'actions à faire')}${kpi('Faites',fin.length,'sur '+all.length+' actions'+(DONE_LOCAL?' (sur cet appareil)':''))}</div>
   ${slNote}
   <section class="panel"><div class="panel-h" style="display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between"><div class="seg" role="tablist">${AT.map(([k,lb])=>`<button data-atab="${k}" aria-pressed="${tab===k}">${lb} <span class="muted">${k==='faites'?fin.length:cnt(k)}</span></button>`).join('')}</div>
    <span class="muted" style="font-size:.8rem">${list.length} action${list.length>1?'s':''} dans ${gs.length} magasin${gs.length>1?'s':''}, triés par caisses en jeu</span></div>
    ${gs.slice(0,lim).map(g=>`<div class="agrp"><div class="agrp-h"><div><span class="t">${esc(g.s.n)}</span> <span class="muted" style="font-size:.78rem">${esc(g.s.v)} · n° ${g.s.no} · ${g.s.days==null?'jamais visité':'visite il y a '+g.s.days+' j'}</span></div><button class="btn sm" data-addroute="${g.s.no}">+ Journée</button></div>
     <ul class="checks">${g.a.sort((x,y)=>y.v-x.v).map(a=>{const d=DONE.get(a.k);return `<li><label><input type="checkbox" data-act="${esc(a.k)}"${d?' checked':''}><span class="body"><span class="t">${esc(pname(a.f))}</span> ${typeChip(a.f)}<span class="w">${a.label}${d?` · fait${d.by?' par '+esc(d.by):''} le ${new Date(d.at).toLocaleDateString('fr-CA',{day:'numeric',month:'short'})}`:''}</span></span></label>${a.v?`<span class="v">${money(a.v)}</span>`:''}</li>`}).join('')}</ul></div>`).join('')||`<div class="empty pad">${tab==='faites'?'Aucune action cochée pour l\'instant.':'Rien à faire ici.'}</div>`}
    ${gs.length>lim?`<div class="pad"><button class="btn" data-more>Voir ${Math.min(20,gs.length-lim)} magasins de plus</button></div>`:''}</section>
-  <section class="panel"><div class="panel-h"><h2>Ventes par période${st.dt?' ('+st.dt+')':''}</h2><p>Caisses vendues dans tes magasins, cette année (ligne pleine) et l'an passé (pointillé).</p></div><div class="pad">${lineChart(t,l,'Ventes par période (cs)',true)}</div></section>
   ${!st.dt||st.dt==='SL'?slPushPanel(ms):''}
-  ${st.dt?'':lossPanel(ms)}`}
+`}
 // SL à pousser : par produit, magasins où le placer (N), où le stock dort (D) et où il se vend (V)
 function slPushPanel(ms){const g={};ms.forEach(s=>byStore[s.i].forEach(o=>{if(prodType(F[o.f])!=='SL'||!'NDV'.includes(o.t))return;(g[o.f]=g[o.f]||{f:F[o.f],N:[],D:[],V:[]})[o.t].push(o)}));
   const rows=Object.values(g).filter(x=>x.N.length+x.D.length).sort((a,b)=>b.N.length+b.D.length-(a.N.length+a.D.length));
@@ -755,7 +751,7 @@ function prodsView(){if(st.fam!=null)return famView(F[st.fam]);
    <div class="seg" role="group" aria-label="Type SAQ">${['','RA','SA','SL'].map(t=>`<button data-ptype="${t}" aria-pressed="${st.ptype===t}">${t||'Tous types'}</button>`).join('')}</div></div>
   <div class="seg" role="group" aria-label="Catégorie">${['',...colors].map(c=>`<button data-color="${esc(c)}" aria-pressed="${st.color===c}">${c?`<span class="colorsw" style="background:${COLORS[c]}"></span>`:''}${c||'Toutes catégories'}</button>`).join('')}</div>
   <div class="panel tablebox"><table><thead><tr><th>Produit</th><th>Type</th><th class="hide-sm">Catégorie</th><th class="n">R13 (cs)</th><th class="n">vs an passé</th><th class="n hide-sm">Magasins</th><th class="hide-sm">Pitch</th></tr></thead><tbody>
-  ${list.map(f=>`<tr class="click" tabindex="0" data-fam="${f.i}"${isActive(f.i)?'':' style="opacity:.55"'}><td><b>${esc(f.n)}</b>${isActive(f.i)?'':' <span class="chip c-SL">Inactif</span>'}<div class="muted" style="font-size:.78rem">${size(f.fmt)} · ${nf1.format(f.px)} $ · ${f.codes[0]}</div></td><td>${typeChip(f)}</td><td class="hide-sm"><span class="colorsw" style="background:${COLORS[f.color]}"></span>${esc(f.color)}<div class="muted" style="font-size:.75rem">${esc(f.cat)}</div></td><td class="n">${nf0.format(f.t13)}</td><td class="n">${pctH(gr(f.t13,f.l13))}</td><td class="n hide-sm">${f.nT3}</td><td class="hide-sm">${pitchOf(f)?'<span class="chip c-RA">Rédigé</span>':'<span class="muted">—</span>'}</td></tr>`).join('')||'<tr><td colspan="7" class="empty">Aucun produit ne correspond.</td></tr>'}
+  ${list.map(f=>`<tr class="click" tabindex="0" data-fam="${f.i}"${isActive(f.i)?'':' style="opacity:.55"'}><td><b>${esc(f.n)}</b>${isActive(f.i)?'':' <span class="chip c-SL">Inactif</span>'}<div class="muted" style="font-size:.78rem">${size(f.fmt)} · ${nf1.format(f.px)} $ · ${f.codes[0]}</div></td><td>${typeChip(f)}${prodType(f)==='SL'?' '+slChip(f):''}</td><td class="hide-sm"><span class="colorsw" style="background:${COLORS[f.color]}"></span>${esc(f.color)}<div class="muted" style="font-size:.75rem">${esc(f.cat)}</div></td><td class="n">${nf0.format(f.t13)}</td><td class="n">${pctH(gr(f.t13,f.l13))}</td><td class="n hide-sm">${f.nT3}</td><td class="hide-sm">${pitchOf(f)?'<span class="chip c-RA">Rédigé</span>':'<span class="muted">—</span>'}</td></tr>`).join('')||'<tr><td colspan="7" class="empty">Aucun produit ne correspond.</td></tr>'}
   </tbody></table></div>`}
 
 function lineChart(t,l,title,small){
@@ -799,12 +795,11 @@ function famView(f){const ops=byFam[f.i];const mine=ops.filter(o=>S[o.s].rep===s
      <dl class="facts"><dt>Format</dt><dd>${size(f.fmt)}</dd><dt>Prix SAQ</dt><dd>${nf1.format(f.px)} $</dd><dt>Catégorie</dt><dd><span class="colorsw" style="background:${COLORS[f.color]}"></span>${esc(f.color)} (${esc(f.cat)})</dd><dt>Type dans EZFocus</dt><dd>${esc(f.type)}</dd><dt>Pays</dt><dd>${esc(f.pays||'—')}</dd>${f.app?`<dt>Appellation</dt><dd>${esc(f.app)}</dd>`:''}${f.cep?`<dt>Cépage</dt><dd>${esc(f.cep)}</dd>`:''}</dl>
    </div></section>
    <div style="display:flex;flex-direction:column;gap:16px;min-width:0">
-    <section class="panel"><div class="panel-h"><h2>Performances</h2><p>Ventes en caisses de 9 L, par période SAQ, extraites d'EZFocus.</p></div><div class="pad">
-      ${(()=>{const m=famSeries(f.i,reps.indexOf(st.rep)),n=famSeries(f.i,null);return lineChart(m.t,m.l,'Ton territoire ('+st.rep+')')+lineChart(n.t,n.l,'Tous les représentants Hektars',true)})()}
-      ${barChart([{label:'Ventes R13 (cs)',ly:f.l13,ty:f.t13,fmt:v=>nf0.format(v)},{label:'Ventes R3 (cs)',ly:f.l3,ty:f.t3,fmt:v=>nf0.format(v)},{label:'Magasins actifs R13',ly:f.nL13,ty:f.nT13,fmt:v=>nf0.format(v)}])}
-      <div class="stop-stats"><span>Croissance R13 ${pctH(gr(f.t13,f.l13))}</span><span>Chez toi : <b>${cnt('R')}</b> ruptures, <b>${cnt('P')}</b> inscriptions perdues, <b>${cnt('A')}</b> magasins où le proposer</span><span>OBL dans <b>${f.nObl}</b> magasins</span></div>
+    ${prodType(f)==='SL'?`<section class="panel"><div class="panel-h"><h2>Statut du SL</h2><p>Remplace ta feuille « Inventaire SL » : vert = à vendre, jaune = à venir, gris = ancien.</p></div><div class="pad"><div class="seg" role="group" aria-label="Statut SL">${SLST.map(([k,l])=>`<button data-slst="${k}" aria-pressed="${slStatus(f)===k}">${l}</button>`).join('')}</div></div></section>`:''}
+    <section class="panel"><div class="panel-h"><h2>Où agir</h2><p>Les courbes de ventes restent dans EZFocus. Ici, seulement ce qui mène à une action.</p></div><div class="pad">
+      <div class="stop-stats"><span>Croissance R13 ${pctH(gr(f.t13,f.l13))}</span>${prodType(f)==='SL'?`<span>Chez toi : à placer dans <b>${cnt('N')}</b> magasins, stock qui dort dans <b>${cnt('D')}</b>, en vente dans <b>${cnt('V')}</b></span>`:`<span>Chez toi : <b>${cnt('R')+cnt('O')}</b> ruptures, <b>${cnt('L')}</b> stocks faibles, <b>${cnt('P')}</b> inscriptions perdues, <b>${cnt('A')}</b> magasins où le proposer</span>`}<span>OBL dans <b>${f.nObl}</b> magasins</span></div>
     </div></section>
-    <section class="panel"><div class="panel-h"><h2>Pitch</h2><p>Ce que le représentant dit en magasin. Il s'affiche dans « Sur la route » quand le produit est à proposer.</p></div><div class="pad">
+    <section class="panel"><div class="panel-h"><h2>Pitch</h2><p>Ce que le représentant dit en magasin. Il s'affiche dans « Aujourd'hui » quand le produit est à proposer.</p></div><div class="pad">
       ${IS_ADMIN?`<textarea id="pitch" placeholder="Écris ici le pitch du produit : profil, accords, arguments de vente.">${esc(pitchOf(f))}</textarea>
       <div style="display:flex;gap:8px;align-items:center"><button class="btn primary" data-savepitch>Enregistrer le pitch</button><span class="muted" style="font-size:.78rem">Visible par toute l'équipe.</span></div>`:(pitchOf(f)?`<p style="margin:0;white-space:pre-wrap">${esc(pitchOf(f))}</p>`:'<p class="muted" style="margin:0">Pas encore de pitch pour ce produit.</p>')}
     </div></section>
@@ -830,23 +825,94 @@ function perfView(){const rows=(IS_ADMIN?reps:[ME.rep_name].filter(r=>reps.inclu
   ${rows.map(x=>`<tr${x.r===st.rep?' style="font-weight:600"':''}><td>${esc(x.r)}</td><td class="n">${x.n}</td><td class="n">${nf0.format(x.t13)}</td><td class="n">${pctH(gr(x.t13,x.l13))}</td><td class="n">${pctH(gr(x.t3,x.l3))}</td><td class="n">${nf0.format(x.vis/x.n*100)} %</td><td class="n">${money(x.pot)}</td></tr>`).join('')}
   </tbody></table></section>`}
 
+// ---------- Aperçu : nouvelles vues ----------
+const SLST=[['actif','À vendre'],['avenir','À venir'],['ancien','Ancien']];
+const slStatus=f=>setOf(f).sl_status||(f.t3>0?'actif':'ancien');
+const slChip=f=>{const k=slStatus(f);const c={actif:'background:var(--goods);color:var(--good)',avenir:'background:var(--Ps);color:var(--P)',ancien:'background:var(--sunk);color:var(--muted)'}[k];return `<span class="chip" style="${c}">${SLST.find(x=>x[0]===k)[1]}</span>`};
+const previewNote=t=>!window.HK_SEED?'':`<div class="demo"><span><b>Aperçu de la nouvelle organisation.</b> ${t}</span></div>`;
+function todayView(){const r=getRoute();
+  if(!r.init){if(window.HK_SEED&&!r.stops.length&&!r.rm.length)r.stops=myStores().slice().sort((a,b)=>b.pot-a.pot).slice(0,3).map(s=>s.no);r.init=1;saveRoute()}
+  return previewNote(`Vraies données EZFocus (période ${D.ref}, extraites le ${dataDate}). L'agenda Google n'est pas branché ici : la journée démarre avec tes 3 magasins qui ont le plus de caisses en jeu, ajoute ou retire ceux que tu veux.`)
+   +routeView()+'<hr style="border:0;border-top:1px solid var(--line);margin:8px 0">'+dashView()}
+function briefData(){const ms=myStores();const keep=st.dt;st.dt='';const all=actionsFor(ms);st.dt=keep;
+  const todo=all.filter(a=>!DONE.get(a.k)).sort((a,b)=>b.v-a.v);
+  const sum=k=>ms.reduce((a,s)=>a+s[k],0);
+  const sl=F.filter(f=>isActive(f.i)&&prodType(f)==='SL'&&slStatus(f)==='actif').map(f=>{const o=ms.flatMap(s=>byStore[s.i].filter(x=>x.f===f.i));
+    return {f,o,N:o.filter(x=>x.t==='N').length,D:o.filter(x=>x.t==='D').length,V:o.filter(x=>x.t==='V').length,nv:o.filter(x=>x.t==='N').reduce((a,x)=>a+x.v,0)}}).filter(x=>x.N+x.D>0).sort((a,b)=>b.N-a.N).slice(0,6);
+  const nv=ms.filter(s=>s.days==null||s.days>60).sort((a,b)=>b.t13-a.t13).slice(0,8);
+  return {ms,todo,top:todo.slice(0,10),t13:sum('t13'),l13:sum('l13'),t3:sum('t3'),l3:sum('l3'),sl,nv,nSuivi:todo.filter(a=>a.cat==='suivi').length,nMarche:todo.filter(a=>a.cat==='marche').length}}
+const pctTx=r=>r==null?'—':(r>=0?'+':'')+nf0.format(r*100)+' %';
+function briefView(){const b=briefData();const first=st.rep.split(' ')[0];
+  return previewNote(`Voici le courriel que chaque représentant recevrait le lundi matin, calculé à partir de l'export EZFocus. Ici, à partir de l'extraction du ${dataDate}.`)+`
+  <div class="dfilters">${IS_ADMIN&&D.reps.length>1?`<label class="dfl"><span class="eyebrow">Représentant</span><select data-dashrep>${D.reps.map(r=>`<option${r===st.rep?' selected':''}>${esc(r)}</option>`).join('')}</select></label>`:''}</div>
+  <div class="head"><div><span class="eyebrow">Brief du lundi · ${esc(st.rep)} · période ${D.ref}</span><h1>Bonjour ${esc(first)}, ta semaine en un coup d'œil</h1>
+   <p class="muted" style="margin:4px 0 0;max-width:72ch">Ton territoire : ${nf0.format(b.t13)} cs sur 13 périodes (${pctTx(gr(b.t13,b.l13))} vs an passé), ${nf0.format(b.t3)} cs sur les 3 dernières (${pctTx(gr(b.t3,b.l3))}). ${b.nSuivi} actions de suivi et ${b.nMarche} de marché potentiel sont ouvertes.</p></div>
+   <button class="btn primary" data-copybrief>Copier le courriel</button></div>
+  <section class="panel"><div class="panel-h"><h2>Tes 10 actions prioritaires</h2><p>Triées par caisses en jeu par an. Le détail est dans Aujourd'hui.</p></div>
+   <ul class="acts">${b.top.map((a,k)=>`<li><span class="chip">${k+1}</span><div class="body"><button class="lnk t" data-fam="${a.f.i}">${esc(pname(a.f))}</button> ${typeChip(a.f)}<div class="w"><b>${esc(a.s.n)}</b> · ${a.label}</div></div>${a.v?`<span class="v">${money(a.v)}</span>`:''}</li>`).join('')||'<li class="empty">Aucune action ouverte.</li>'}</ul></section>
+  ${slPushPanel(b.ms)}
+  <section class="panel"><div class="panel-h"><h2>Magasins à revoir</h2><p>Pas de visite inscrite dans EZFocus depuis plus de 60 jours, les plus gros vendeurs d'abord.</p></div>
+   <ul class="acts">${b.nv.map(s=>`<li><span class="chip">${s.days==null?'—':s.days+' j'}</span><div class="body"><span class="t" style="font-weight:600">${esc(s.n)}</span><div class="w">${esc(s.v)} · ${s.days==null?'aucune visite inscrite':'dernière visite il y a '+s.days+' jours'} · ${nf0.format(s.t13)} cs sur 13 périodes</div></div><button class="btn sm" data-addroute="${s.no}">+ Journée</button></li>`).join('')||'<li class="empty">Tous tes magasins ont été visités dans les 60 derniers jours.</li>'}</ul></section>
+  ${lossPanel(b.ms)}`}
+function briefText(){const b=briefData();const first=st.rep.split(' ')[0];
+  let t=`Bonjour ${first},\n\nTon territoire : ${nf0.format(b.t13)} cs sur 13 périodes (${pctTx(gr(b.t13,b.l13))} vs an passé), ${nf0.format(b.t3)} cs sur les 3 dernières (${pctTx(gr(b.t3,b.l3))}).\n\nTES 10 ACTIONS PRIORITAIRES\n`;
+  b.top.forEach((a,k)=>t+=`${k+1}. ${a.s.n} : ${pname(a.f)} (${a.f.codes[0]}). ${a.label}${a.v?' ('+money(a.v)+')':''}\n`);
+  if(b.sl.length){t+=`\nSL À POUSSER\n`;b.sl.forEach(x=>t+=`- ${pname(x.f)} : à placer dans ${x.N} magasins, stock qui dort dans ${x.D}\n`)}
+  if(b.nv.length){t+=`\nMAGASINS À REVOIR (plus de 60 jours)\n`;b.nv.forEach(s=>t+=`- ${s.n} (${s.days==null?'aucune visite inscrite':s.days+' jours'})\n`)}
+  return t+`\nDonnées EZFocus, période ${D.ref}.`}
+function noteText(s){const d=new Date().toLocaleDateString('fr-CA',{day:'numeric',month:'long',year:'numeric'});const keep=st.dt;st.dt='';const acts=actionsFor([s]);st.dt=keep;
+  const RL={cmd:'commandé',prom:'promesse de commande',non:'pas commandé',nr:'pas répondu',fait:'fait'};
+  const vus=acts.filter(a=>DONE.get(a.k)),open=acts.filter(a=>!DONE.get(a.k)).sort((a,b)=>b.v-a.v).slice(0,5);
+  let t=`Visite du ${d} : ${s.n} (${s.no})\n\n`;
+  t+=vus.length?`Points traités :\n${vus.map(a=>`- ${pname(a.f)} : ${RL[DONE.get(a.k).r]||'fait'}`).join('\n')}\n`:`Points traités :\n- (coche les actions faites dans l'outil pour les voir ici)\n`;
+  if(open.length)t+=`\nÀ suivre :\n${open.map(a=>`- ${pname(a.f)} : ${a.label}`).join('\n')}\n`;
+  return t}
+
+function slGroup(x,t,title,txt){const l=x.o.filter(o=>o.t===t).sort((a,b)=>(b.v||b.inv)-(a.v||a.inv));if(!l.length)return '';
+  return `<div class="goal">${title} (${l.length})</div><ul class="acts">${l.map(o=>{const s=S[o.s];return `<li><span class="chip c-${t}">${TYPES[t]}</span><div class="body"><span class="t" style="font-weight:600">${esc(s.n)}</span><div class="w">${esc(s.v)} · n° ${s.no} · ${txt(o)} · ${s.days==null?'jamais visité':'visite il y a '+s.days+' j'}</div></div><button class="btn sm" data-addroute="${s.no}">+ Journée</button></li>`}).join('')}</ul>`}
+// ---------- Courriel SL ----------
+function mailSL(){return F.filter(f=>isActive(f.i)&&prodType(f)==='SL'&&slStatus(f)==='actif').sort((a,b)=>b.t3-a.t3)}
+const cap=t=>t&&!/^(n\/?a|sans objet)$/i.test(t.trim())?t.charAt(0)+t.slice(1).toLowerCase():'';
+function mailText(){const sel=(st.mailSel||[]).map(i=>F[i]);if(!sel.length)return '';const s=st.mailStore?S.find(x=>x.no===st.mailStore):null;
+  const why=f=>{if(!s)return '';const o=byStore[s.i].find(o=>o.f===f.i);if(!o)return '';
+    if(o.t==='N')return `Il n'est pas encore chez vous, alors que ${o.np} succursales comparables le vendent (${cs(o.v)} cs en médiane sur 3 périodes).`;
+    if(o.t==='D')return `Vous en avez ${nf0.format(o.inv)} unités en stock : une mise en avant le ferait bouger.`;
+    if(o.t==='V')return `Il se vend chez vous (${cs(o.t3)} cs sur 3 périodes) et il vous en reste ${nf0.format(o.inv)} unités.`;return ''};
+  let t=`Objet : ${sel.length>1?'Nos SL disponibles':pname(sel[0])+', SL disponible'}${s?' pour '+s.n:''}\n\nBonjour,\n\n`;
+  t+=`Voici ${sel.length>1?'les produits en lot (SL)':'le produit en lot (SL)'} dont je vous parlais. Ce sont des quantités limitées, sans réassort une fois le lot écoulé.\n`;
+  sel.forEach(f=>{const det=[cap(f.pays),f.app&&f.app!=='Sans objet'?f.app:'',cap(f.cep)].filter(Boolean).join(' · ');
+    t+=`\n${pname(f)}\nCode SAQ ${f.codes[0]} · ${f.px.toFixed(2).replace('.',',')} $${det?' · '+det:''}\n`;const p=pitchOf(f);if(p)t+=p+'\n';const w=why(f);if(w)t+=w+'\n'});
+  return t+`\nJe peux vous en réserver dès aujourd'hui. Dites-moi combien de caisses vous souhaitez.\n\nMerci et bonne journée,\n${st.rep}\nHektars`}
+function mailPanel(){const L=mailSL();const sel=st.mailSel||[];const txt=mailText();const ms=myStores().slice().sort((a,b)=>a.n.localeCompare(b.n,'fr'));
+  return `<section class="panel" id="mailbox"><div class="panel-h"><h2>Rédiger un courriel SL</h2><p>Choisis les SL dont tu veux parler, et un magasin si tu veux un argument chiffré pour lui. Le courriel est rédigé à partir des données EZFocus et de ton pitch, sans rien inventer.</p></div><div class="pad" style="display:flex;flex-direction:column;gap:12px">
+   <div class="seg" role="group" aria-label="SL à mettre dans le courriel" style="flex-wrap:wrap">${L.map(f=>`<button data-mailf="${f.i}" aria-pressed="${sel.includes(f.i)}">${esc(pname(f))}</button>`).join('')||'<span class="muted">Aucun SL au statut À vendre.</span>'}</div>
+   <label class="dfl"><span class="eyebrow">Magasin (facultatif)</span><select id="mailstore"><option value="">Courriel général, sans magasin</option>${ms.map(s=>`<option value="${s.no}"${st.mailStore===s.no?' selected':''}>${esc(s.n)} (${s.no})</option>`).join('')}</select></label>
+   ${txt?`<textarea id="mailtxt" style="min-height:320px">${esc(txt)}</textarea><div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><button class="btn primary" data-copymail>Copier le courriel</button><span class="muted" style="font-size:.78rem">La description de chaque vin vient de son pitch : écris-le une fois dans Produits, il sert partout.</span></div>`:'<div class="empty">Sélectionne au moins un SL.</div>'}
+  </div></section>`}
+
 // ---------- routing & events ----------
 function synchroView(){if(!IS_ADMIN)return '<div class="panel empty">Réservé à l\'administrateur.</div>';
   return `<div class="head"><div><span class="eyebrow">Données actuelles : période ${D.ref}, extraites le ${dataDate}</span><h1>Synchroniser EZFocus</h1></div></div>
   <section class="panel"><div class="panel-h"><h2>Mettre à jour les données</h2><p>À faire chaque matin. Tous les représentants voient les nouvelles données dès que c'est terminé.</p></div><div class="pad">${hkSyncHelp()}</div></section>`}
-const PAGES={route:routeView,dashboard:dashView,appels:callView,degust:tastView,produits:prodsView,perf:perfView,synchro:synchroView};
+const PAGES={aujourdhui:todayView,appels:callView,degust:tastView,produits:prodsView,brief:briefView,synchro:synchroView};
 function render(keepFocus){document.getElementById('avatar').textContent=st.rep.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();document.querySelectorAll('nav.tabs a').forEach(a=>a.toggleAttribute('aria-current',a.dataset.p===st.page)||a.dataset.p===st.page&&a.setAttribute('aria-current','page'));
   document.querySelectorAll('nav.tabs a').forEach(a=>{if(a.dataset.p===st.page)a.setAttribute('aria-current','page');else a.removeAttribute('aria-current')});
   document.getElementById('view').innerHTML=PAGES[st.page]();
   const cq=document.getElementById('cq');if(cq&&keepFocus){cq.focus();cq.setSelectionRange(cq.value.length,cq.value.length)}
   const tq=document.getElementById('tq');if(tq&&keepFocus){tq.focus();tq.setSelectionRange(tq.value.length,tq.value.length)}
   const pq=document.getElementById('pq');if(pq&&keepFocus){pq.focus();pq.setSelectionRange(pq.value.length,pq.value.length)}}
-function fromHash(){const h=location.hash.slice(1);st.page=PAGES[h]?h:'route';st.fam=null;render();window.scrollTo(0,0)}
+function fromHash(){const h=location.hash.slice(1);st.page=PAGES[h]?h:'aujourdhui';st.fam=null;render();window.scrollTo(0,0)}
 window.addEventListener('hashchange',fromHash);
 function openFam(i){st.fam=+i;if(st.page!=='produits'){st.page='produits';history.replaceState(null,'','#produits')}render();window.scrollTo(0,0)}
 function saveRoute(){LS.set(routeKey(),getRoute())}
-document.addEventListener('click',e=>{const t=e.target.closest('[data-gcal],[data-dt],[data-callf],[data-newsess],[data-mailnew],[data-tnew],[data-tcancel],[data-tadd],[data-trm],[data-tsave],[data-tdel],[data-mailfam],[data-mailsess],[data-mailback],[data-mailregen],[data-mailcopy],[data-slnew],[data-sllaunch],[data-res],[data-resall],[data-sessback],[data-opensess],[data-createsess],[data-closesess],[data-reopensess],[data-atab],[data-more],[data-calrefresh],[data-pact],[data-setact],[data-fam],[data-back],[data-ptype],[data-color],[data-settype],[data-savepitch],[data-rmphoto],[data-photo],[data-rm],[data-copystop],[data-copyday],[data-addroute]');if(!t)return;const d=t.dataset;
+document.addEventListener('click',e=>{const t=e.target.closest('[data-note],[data-slst],[data-copybrief],[data-mailf],[data-copymail],[data-mailpre],[data-gcal],[data-dt],[data-callf],[data-newsess],[data-mailnew],[data-tnew],[data-tcancel],[data-tadd],[data-trm],[data-tsave],[data-tdel],[data-mailfam],[data-mailsess],[data-mailback],[data-mailregen],[data-mailcopy],[data-slnew],[data-sllaunch],[data-res],[data-resall],[data-sessback],[data-opensess],[data-createsess],[data-closesess],[data-reopensess],[data-atab],[data-more],[data-calrefresh],[data-pact],[data-setact],[data-fam],[data-back],[data-ptype],[data-color],[data-settype],[data-savepitch],[data-rmphoto],[data-photo],[data-rm],[data-copystop],[data-copyday],[data-addroute]');if(!t)return;const d=t.dataset;
   if(d.pact!=null){st.pact=d.pact;render();return}
+  if(d.note!=null)return copy(noteText(S[+d.note]));
+  if(d.slst!=null){saveSet(F[st.fam],{sl_status:d.slst},'Statut SL mis à jour');return}
+  if(d.copybrief!=null)return copy(briefText());
+  if(d.mailf!=null){const i=+d.mailf;const a=st.mailSel=st.mailSel||[];const k=a.indexOf(i);if(k>=0)a.splice(k,1);else a.push(i);render();return}
+  if(d.copymail!=null){const ta=document.getElementById('mailtxt');return copy(ta?ta.value:mailText())}
+  if(d.mailpre!=null){st.mailSel=[+d.mailpre];st.sess=null;location.hash='appels';setTimeout(()=>{const m=document.getElementById('mailbox');if(m)m.scrollIntoView()},80);return}
   if(d.setact!=null){saveSet(F[st.fam],{active:d.setact==='1'},d.setact==='1'?'Produit actif : il revient dans les recommandations':'Produit inactif : retiré des recommandations');return}
   if(d.fam!=null)return openFam(d.fam);
   if(d.back!=null){st.fam=null;render();return}
@@ -899,6 +965,7 @@ document.addEventListener('keydown',e=>{if(e.key==='Enter'&&e.target.matches('tr
 document.addEventListener('mousedown',e=>{if(e.target.closest&&e.target.closest('.combo-opt'))e.preventDefault()});
 document.addEventListener('input',e=>{if(e.target.id==='sessname')st.sessName=e.target.value;if((e.target.id==='mailsubj'||e.target.id==='mailbody')&&st.mailEdit){st.mailEdit[e.target.id==='mailsubj'?'subj':'body']=e.target.value;const a=document.querySelector('a[href^="mailto:"]');if(a)a.href='mailto:?subject='+encodeURIComponent(st.mailEdit.subj)+'&body='+encodeURIComponent(st.mailEdit.body)}if(e.target.id==='slq'){st.slq=e.target.value;clearTimeout(st.slqt);st.slqt=setTimeout(()=>{render();const q=document.getElementById('slq');if(q){q.focus();q.setSelectionRange(q.value.length,q.value.length)}},400)}if(e.target.id==='pq'){st.q=e.target.value;render(true)}if(e.target.id==='cq'){st.cq=e.target.value;render(true)}if(e.target.id==='tq'){st.tq=e.target.value;render(true)}if(st.tnew){if(e.target.id==='tnotes')st.tnew.notes=e.target.value;if(e.target.dataset&&e.target.dataset.tqty!=null){st.tnew.items[+e.target.dataset.tqty].qty=e.target.value.replace(/[^0-9]/g,'');const b=document.querySelector('[data-tsave]');if(b&&!b.disabled)b.textContent='Enregistrer la dégustation ('+st.tnew.items.reduce((a,y)=>a+(+y.qty||0),0)+' bouteilles)'}}});
 document.addEventListener('change',e=>{
+  if(e.target.id==='mailstore'){st.mailStore=e.target.value;render();return}
   if(st.tnew&&(e.target.id==='tday'||e.target.id==='tstore')){st.tnew[e.target.id==='tday'?'day':'store']=e.target.value;render();return}
   if(e.target.matches&&e.target.matches('[data-mailstore]')){st.mail.store=e.target.value;st.mailEdit=null;render();return}
   if(e.target.matches&&e.target.matches('[data-mailkind]')){st.mail.kind=e.target.value;st.mailEdit=null;render();return}
@@ -913,7 +980,7 @@ document.addEventListener('change',e=>{
         if(error){toast('Photo non enregistrée : '+error.message);return}
         const url=SB.storage.from('product-photos').getPublicUrl(path).data.publicUrl;const p=photosOf(f);p.unshift(url);saveSet(f,{photos:p},'Photo ajoutée')},'image/jpeg',.82)};img.src=rd.result};rd.readAsDataURL(file)}
 });
-Promise.all([loadSL().catch(()=>{SLL_LOCAL=true;SLL=LS.get('sl',[])}),loadDone().catch(()=>{DONE_LOCAL=true}),loadSess().catch(()=>{SESS_LOCAL=true;SESS=LS.get('sessions',[])}),loadTast().catch(()=>{TAST_LOCAL=true;TAST=LS.get('tastings',[])})]).finally(()=>{if(st.page==='dashboard'||st.page==='appels'||st.page==='degust')render()});
+Promise.all([loadSL().catch(()=>{SLL_LOCAL=true;SLL=LS.get('sl',[])}),loadDone().catch(()=>{DONE_LOCAL=true}),loadSess().catch(()=>{SESS_LOCAL=true;SESS=LS.get('sessions',[])}),loadTast().catch(()=>{TAST_LOCAL=true;TAST=LS.get('tastings',[])})]).finally(()=>{if(st.page!=='produits')render()});
 fromHash();
 }
 boot();
