@@ -522,7 +522,7 @@ function slPushPanel(ms){const {rows,pri}=slPushList(ms);
    :'<div class="empty pad">Aucun SL actif à pousser pour l\'instant.</div>'}</section>`}
 
 // ---------- Session d'appels ----------
-const CALLTXT={O:'OBL sans stock : faire recommander',R:'En rupture : faire recommander',L:o=>`Stock faible (${nf0.format(o.inv)} u.) : faire recommander`,P:o=>`Plus en magasin depuis au moins 3 périodes (${cs(Math.max(o.t13,o.l13))} cs/an au meilleur) : relancer`,
+const CALLTXT={SUG:o=>`Suggestion : ${o.why}`,O:'OBL sans stock : faire recommander',R:'En rupture : faire recommander',L:o=>`Stock faible (${nf0.format(o.inv)} u.) : faire recommander`,P:o=>`Plus en magasin depuis au moins 3 périodes (${cs(Math.max(o.t13,o.l13))} cs/an au meilleur) : relancer`,
   A:o=>`Jamais vendu ici, ${o.np} magasins comparables le vendent (${cs(o.p50)} cs/an en médiane) : proposer`,S:o=>`${cs(o.t13)} cs/an ici contre ${cs(o.p50)} chez les pairs : pousser`,
   N:o=>`Absent, ${o.np} magasins comparables le vendent : placer vite`,SLP:o=>`Lancement SL : proposer ${cs(o.v)} cs`,D:o=>`${nf0.format(o.inv)} u. en stock sans vente sur 3 périodes : mettre en avant`};
 function callOps(s,f){const ty=prodType(f);return byStore[s.i].filter(o=>o.f===f.i&&CALLTXT[o.t]&&(ty!=='RA'||o.t==='O'||(o.t==='L'&&isObl(o.s,o.f))))}
@@ -539,8 +539,10 @@ const curProducts=()=>{if(st.sess==='mail')return st.mail.products;const x=st.se
 function sessRows(x){const ms=S.filter(s=>s.rep===x.rep_name&&!s.inactive);
   if(x.plan){const f=F.find(y=>fk(y)===x.products[0]);if(!f)return [];return ms.filter(s=>x.plan[s.no]).map(s=>({s,it:[{o:{t:'SLP',v:x.plan[s.no],s:s.i,f:f.i},f,k:'sess:'+x.id+'|'+s.no+'|'+fk(f)+'|SLP'}],v:x.plan[s.no]})).sort((a,b)=>b.v-a.v)}
   const sel=F.filter(f=>x.products.includes(fk(f)));
-  return ms.map(s=>{const it=[];sel.forEach(f=>callOps(s,f).forEach(o=>it.push({o,f,k:'sess:'+x.id+'|'+s.no+'|'+fk(f)+'|'+o.t})));return {s,it,v:it.reduce((a,y)=>a+y.o.v,0)}})
-    .filter(r=>r.it.length).sort((a,b)=>b.v-a.v||b.it.length-a.it.length)}
+  // produit sans aucun signal EZFocus dans le territoire (ex. nouveau SL) : on propose les plus gros magasins Hektars qui ne l'ont pas (pas pour les RA)
+  const sug={};sel.forEach(f=>{if(prodType(f)==='RA'||ms.some(s=>callOps(s,f).length))return;slSugg(f,ms).forEach(y=>{(sug[y.s.i]=sug[y.s.i]||[]).push({o:{t:'SUG',v:0,why:y.why,s:y.s.i,f:f.i},f,k:'sess:'+x.id+'|'+y.s.no+'|'+fk(f)+'|SUG',r:y.v})})});
+  return ms.map(s=>{const it=[];sel.forEach(f=>callOps(s,f).forEach(o=>it.push({o,f,k:'sess:'+x.id+'|'+s.no+'|'+fk(f)+'|'+o.t})));(sug[s.i]||[]).forEach(y=>it.push(y));return {s,it,v:it.reduce((a,y)=>a+y.o.v,0),r:it.reduce((a,y)=>a+(y.r||0),0)}})
+    .filter(r=>r.it.length).sort((a,b)=>b.v-a.v||b.it.length-a.it.length||b.r-a.r)}
 // résultat d'appel : cmd = commandé, prom = promesse de commande, non = pas commandé, nr = pas répondu (à rappeler)
 const RES=[['cmd','Commandé'],['prom','Promesse'],['non','Pas commandé'],['nr','Pas répondu']];
 const resOf=k=>{const d=DONE.get(k);return d?(d.r||'fait'):null};
@@ -660,7 +662,7 @@ function sessView(x){const y=sessStats(x);const pct=y.items?Math.round(y.done/y.
   <div class="kpis">${resKpis(y.n)}</div>
   <details class="panel"${x.products.length?'':' open'}><summary class="panel-h" style="cursor:pointer"><h2 style="display:inline">Produits de la session (${x.products.length})</h2></summary><div class="pad" style="display:flex;flex-direction:column;gap:12px">${productPicker()}</div></details>
   <section class="panel"><div class="panel-h"><h2>Magasins à appeler</h2><span class="muted num">${y.nStores-y.stores} restants</span><p>Triés par caisses en jeu. Note le résultat de chaque produit. « Pas répondu » garde le magasin dans la liste pour le rappeler.</p></div>
-    ${y.rows.map(r=>{const fin=r.it.every(z=>isFin(z.k));return `<div class="agrp${fin?' fin':''}"><div class="agrp-h"><div><span class="t">${esc(r.s.n)}</span> <span class="muted" style="font-size:.78rem">${esc(r.s.v)} · n° ${r.s.no} · ${BAN[r.s.ban]||''} · ${r.s.days==null?'jamais visité':'visite il y a '+r.s.days+' j'}</span></div><div style="display:flex;gap:8px;align-items:center">${fin?'':`<button class="btn sm" data-resall="nr" data-keys="${esc(r.it.map(z=>z.k).join(';;'))}">Pas répondu</button>`}<span class="v" style="font:500 .78rem var(--f-mono)">${fin?'✓ terminé':(x.plan?cs(r.v)+' cs à placer':money(r.v))}</span></div></div>
+    ${y.rows.map(r=>{const fin=r.it.every(z=>isFin(z.k));return `<div class="agrp${fin?' fin':''}"><div class="agrp-h"><div><span class="t">${esc(r.s.n)}</span> <span class="muted" style="font-size:.78rem">${esc(r.s.v)} · n° ${r.s.no} · ${BAN[r.s.ban]||''} · ${r.s.days==null?'jamais visité':'visite il y a '+r.s.days+' j'}</span></div><div style="display:flex;gap:8px;align-items:center">${fin?'':`<button class="btn sm" data-resall="nr" data-keys="${esc(r.it.map(z=>z.k).join(';;'))}">Pas répondu</button>`}<span class="v" style="font:500 .78rem var(--f-mono)">${fin?'✓ terminé':(x.plan?cs(r.v)+' cs à placer':r.v?money(r.v):'suggestion')}</span></div></div>
       <ul class="checks">${r.it.map(z=>{const d=DONE.get(z.k),rr=resOf(z.k);return `<li><div class="body" style="flex:1;min-width:0"><span class="t">${esc(pname(z.f))}</span> ${typeChip(z.f)}<span class="w">${txt(z.o)}${z.o.v&&z.o.t!=='SLP'?' · '+money(z.o.v):''}${d?` · noté${d.by?' par '+esc(d.by):''} le ${new Date(d.at).toLocaleDateString('fr-CA',{day:'numeric',month:'short'})}`:''}</span>
         <div class="seg res" role="group" aria-label="Résultat de l'appel">${RES.map(([k,lb])=>`<button class="r-${k}" data-res="${k}" data-k="${esc(z.k)}" aria-pressed="${rr===k}">${lb}</button>`).join('')}</div></div></li>`}).join('')}</ul></div>`}).join('')||'<div class="empty pad">Aucun magasin à appeler pour ces produits.</div>'}</section>`}
 
