@@ -121,7 +121,7 @@ tr.click{cursor:pointer} tr.click:hover td{background:var(--sunk)}
 ul.checks{list-style:none;margin:0;padding:0 18px 10px}ul.checks li{display:flex;gap:10px;align-items:flex-start;padding:7px 0;border-top:1px solid var(--line2)}ul.checks li:first-child{border-top:0}
 ul.checks label{display:flex;gap:10px;flex:1;min-width:0;cursor:pointer}ul.checks input{width:18px;height:18px;margin-top:2px;flex:none;accent-color:var(--accent)}ul.checks .body{display:block;min-width:0}ul.checks .w{display:block;font-size:.8rem;color:var(--muted);margin-top:2px}ul.checks .t{font-weight:600}
 ul.checks input:checked+.body .t{text-decoration:line-through;color:var(--muted)}
-.chips{display:flex;flex-wrap:wrap;gap:6px}.pick{font:inherit;font-size:.8rem;padding:6px 10px;border-radius:99px;border:1px solid var(--line);background:var(--surface);color:var(--ink);cursor:pointer;display:inline-flex;gap:6px;align-items:center}.pick:hover{border-color:var(--accent)}.pick.on{background:var(--accent-soft);border-color:var(--accent);color:var(--accent);font-weight:600}
+.panel:has(.combo){overflow:visible}.combo{position:relative;flex:1;min-width:220px}.combo input{width:100%}.combo-list{position:absolute;left:0;right:0;top:calc(100% + 4px);background:var(--surface);border:1px solid var(--line);border-radius:10px;box-shadow:0 10px 30px rgba(0,0,0,.14);z-index:30;max-height:340px;overflow:auto;padding:4px}.combo-list.sugg{display:none}.combo:focus-within .combo-list.sugg{display:block}.combo-opt{display:flex;width:100%;gap:8px;align-items:center;padding:9px 10px;border:0;border-radius:7px;background:none;color:var(--ink);font:inherit;font-size:.88rem;text-align:left;cursor:pointer}.combo-opt:hover,.combo-opt:focus{background:var(--sunk);outline:none}.combo-opt .muted{margin-left:auto;font-size:.76rem;white-space:nowrap}.combo-empty{padding:10px;color:var(--muted);font-size:.85rem}.chips{display:flex;flex-wrap:wrap;gap:6px}.pick{font:inherit;font-size:.8rem;padding:6px 10px;border-radius:99px;border:1px solid var(--line);background:var(--surface);color:var(--ink);cursor:pointer;display:inline-flex;gap:6px;align-items:center}.pick:hover{border-color:var(--accent)}.pick.on{background:var(--accent-soft);border-color:var(--accent);color:var(--accent);font-weight:600}
 .prog{height:6px;border-radius:3px;background:var(--sunk);overflow:hidden;margin-top:6px}.prog i{display:block;height:100%;background:var(--accent)}
 .agrp.fin{opacity:.6}textarea.txt{resize:vertical;font-family:inherit}input.txt,textarea.txt{font:inherit;font-size:1rem;width:100%;max-width:480px;padding:10px 12px;border-radius:8px;border:1px solid var(--line);background:var(--surface);color:var(--ink)}
 .seg.res{margin-top:8px}.seg.res button{font-size:.76rem;padding:5px 10px}
@@ -539,10 +539,9 @@ function productPicker(){const ms=myStores();const cur=curProducts();const sel=F
   const cand=F.filter(f=>isActive(f.i)&&(!st.dt||prodType(f)===st.dt)).map(f=>({f,n:ms.filter(s=>callOps(s,f).length).length}))
     .filter(x=>(q?(x.f.n+' '+x.f.codes.join(' ')).normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase().includes(q):(st.sess==='mail'||x.n>0))).sort((a,b)=>b.n-a.n||b.f.t3-a.f.t3).slice(0,q?30:15);
   return `${sel.length?`<div class="chips">${sel.map(f=>`<button class="pick on" data-callf="${f.i}">${esc(pname(f))} ${typeChip(f)} <span aria-hidden="true">×</span></button>`).join('')}</div>`:''}
-    <div class="filters"><input type="search" id="cq" placeholder="Chercher un produit (nom ou code SAQ)…" value="${esc(st.cq||'')}" aria-label="Chercher un produit">
-    <div class="seg" role="group" aria-label="Type">${DT.map(([k,lb])=>`<button data-dt="${k}" aria-pressed="${(st.dt||'')===k}">${lb}</button>`).join('')}</div></div>
-    <div class="chips">${cand.filter(x=>!cur.includes(fk(x.f))).map(x=>`<button class="pick" data-callf="${x.f.i}">+ ${esc(pname(x.f))} ${typeChip(x.f)} <span class="muted">${x.n} mag.</span></button>`).join('')||'<span class="muted">Aucun produit trouvé.</span>'}</div>
-    ${q?'':'<p class="muted" style="font-size:.78rem;margin:0">Suggestions : les produits avec le plus de magasins à appeler. Utilise la recherche pour les autres.</p>'}`}
+    <div class="filters"><div class="combo"><input type="search" id="cq" autocomplete="off" placeholder="Tape un produit (nom ou code SAQ)…" value="${esc(st.cq||'')}" aria-label="Chercher un produit">
+    <div class="combo-list${q?'':' sugg'}" role="listbox">${q?'':'<div class="combo-empty">'+'Suggestions : le plus de magasins à appeler'+'</div>'}${cand.filter(x=>!cur.includes(fk(x.f))).slice(0,q?30:8).map(x=>`<button class="combo-opt" role="option" data-callf="${x.f.i}">${esc(pname(x.f))} ${typeChip(x.f)}${x.n?`<span class="muted">${x.n} mag. à appeler</span>`:''}</button>`).join('')||'<div class="combo-empty">Aucun produit trouvé.</div>'}</div></div>
+    <div class="seg" role="group" aria-label="Type">${DT.map(([k,lb])=>`<button data-dt="${k}" aria-pressed="${(st.dt||'')===k}">${lb}</button>`).join('')}</div></div>`}
 const fdate=d=>new Date(d).toLocaleDateString('fr-CA',{day:'numeric',month:'short',year:'numeric'});
 // ---------- Lancements SL : objectif 80 % du lot en 6 semaines ----------
 let SLL=[],SLL_LOCAL=false;
@@ -712,8 +711,8 @@ function tastNewView(){const t=st.tnew;const ms=myStores().slice().sort((a,b)=>(
   <section class="panel"><div class="panel-h"><h2>2. Produits et ventes</h2><p>Nombre de bouteilles vendues pendant la dégustation, par produit.</p></div><div class="pad" style="display:flex;flex-direction:column;gap:12px">
     ${t.items.length?`<ul class="acts" style="border:1px solid var(--line2);border-radius:10px">${t.items.map((y,i)=>{const f=famBy(y.k);return `<li style="align-items:center"><div class="body" style="flex:1;min-width:0"><span class="t">${esc(tName(y.k))}</span> ${f?typeChip(f):''}</div>
       <label style="display:flex;align-items:center;gap:6px"><input class="txt" type="text" inputmode="numeric" data-tqty="${i}" value="${esc(String(y.qty??''))}" placeholder="0" aria-label="Bouteilles vendues" style="width:80px;text-align:right"><span class="muted">bout.</span></label><button class="btn sm" data-trm="${i}" aria-label="Retirer">×</button></li>`}).join('')}</ul>`:''}
-    <input type="search" id="tq" class="txt" placeholder="Ajouter un produit (nom ou code SAQ)…" value="${esc(st.tq||'')}" aria-label="Chercher un produit" style="max-width:none">
-    <div class="chips">${cand.map(f=>`<button class="pick" data-tadd="${f.i}">+ ${esc(pname(f))} ${typeChip(f)}</button>`).join('')||'<span class="muted">Aucun produit trouvé.</span>'}</div></div></section>
+    <div class="combo"><input type="search" id="tq" class="txt" autocomplete="off" placeholder="Tape un produit à ajouter (nom ou code SAQ)…" value="${esc(st.tq||'')}" aria-label="Chercher un produit" style="max-width:none">
+    <div class="combo-list${q?'':' sugg'}" role="listbox">${q?'':'<div class="combo-empty">Produits les plus vendus</div>'}${cand.slice(0,q?30:8).map(f=>`<button class="combo-opt" role="option" data-tadd="${f.i}">${esc(pname(f))} ${typeChip(f)}</button>`).join('')||'<div class="combo-empty">Aucun produit trouvé.</div>'}</div></div></div></section>
   <section class="panel"><div class="panel-h"><h2>3. Notes (facultatif)</h2></div><div class="pad"><textarea id="tnotes" class="txt" rows="3" placeholder="Accueil, achalandage, commentaires des clients…" style="max-width:none">${esc(t.notes||'')}</textarea></div></section>
   <div><button class="btn primary" data-tsave${ok?'':' disabled'}>Enregistrer la dégustation${t.items.length?` (${t.items.reduce((a,y)=>a+(+y.qty||0),0)} bouteilles)`:''}</button>${ok?'':' <span class="muted" style="font-size:.8rem">Choisis une succursale et au moins un produit.</span>'}</div>`}
 
@@ -840,6 +839,7 @@ function render(keepFocus){document.getElementById('avatar').textContent=st.rep.
   document.querySelectorAll('nav.tabs a').forEach(a=>{if(a.dataset.p===st.page)a.setAttribute('aria-current','page');else a.removeAttribute('aria-current')});
   document.getElementById('view').innerHTML=PAGES[st.page]();
   const cq=document.getElementById('cq');if(cq&&keepFocus){cq.focus();cq.setSelectionRange(cq.value.length,cq.value.length)}
+  const tq=document.getElementById('tq');if(tq&&keepFocus){tq.focus();tq.setSelectionRange(tq.value.length,tq.value.length)}
   const pq=document.getElementById('pq');if(pq&&keepFocus){pq.focus();pq.setSelectionRange(pq.value.length,pq.value.length)}}
 function fromHash(){const h=location.hash.slice(1);st.page=PAGES[h]?h:'route';st.fam=null;render();window.scrollTo(0,0)}
 window.addEventListener('hashchange',fromHash);
@@ -853,7 +853,7 @@ document.addEventListener('click',e=>{const t=e.target.closest('[data-gcal],[dat
   if(d.ptype!=null){st.ptype=d.ptype;render();return}
   if(d.dt!=null){st.dt=d.dt;st.more=0;LS.set('dt',d.dt);render();return}
   if(d.callf!=null){const k=fk(F[+d.callf]);const x=st.sess&&st.sess!=='new'&&st.sess!=='mail'?sessOf(st.sess):null;const a=st.sess==='mail'?st.mail.products:x?x.products:st.calls;const i=a.indexOf(k);if(i>=0)a.splice(i,1);else a.push(k);
-    if(x)saveSess(x,false).then(render);else{if(st.sess!=='mail')LS.set('calls',a);st.mailEdit=null;render()}return}
+    const opt=t.classList.contains('combo-opt');if(opt)st.cq='';if(x)saveSess(x,false).then(()=>render(opt));else{if(st.sess!=='mail')LS.set('calls',a);st.mailEdit=null;render(opt)}return}
   if(d.res){const cur=resOf(d.k);setResults([d.k],cur===d.res?null:d.res);return}
   if(d.resall){setResults(d.keys.split(';;').filter(k=>!isFin(k)),d.resall);return}
   if(d.mailnew!=null||d.mailsess!=null){const x=d.mailsess!=null?sessOf(d.mailsess):null;st.mailBack=st.sess;st.mail={products:x?x.products.slice():[],store:'',kind:'auto',sess:x?x.id:null};st.mailEdit=null;st.sess='mail';render();window.scrollTo(0,0);return}
@@ -896,6 +896,7 @@ document.addEventListener('click',e=>{const t=e.target.closest('[data-gcal],[dat
   if(d.copyday!=null)return copy(getRoute().stops.map(no=>stopText(S.find(s=>s.no===no))).join('\n\n'));
 });
 document.addEventListener('keydown',e=>{if(e.key==='Enter'&&e.target.matches('tr[data-fam]'))openFam(e.target.dataset.fam)});
+document.addEventListener('mousedown',e=>{if(e.target.closest&&e.target.closest('.combo-opt'))e.preventDefault()});
 document.addEventListener('input',e=>{if(e.target.id==='sessname')st.sessName=e.target.value;if((e.target.id==='mailsubj'||e.target.id==='mailbody')&&st.mailEdit){st.mailEdit[e.target.id==='mailsubj'?'subj':'body']=e.target.value;const a=document.querySelector('a[href^="mailto:"]');if(a)a.href='mailto:?subject='+encodeURIComponent(st.mailEdit.subj)+'&body='+encodeURIComponent(st.mailEdit.body)}if(e.target.id==='slq'){st.slq=e.target.value;clearTimeout(st.slqt);st.slqt=setTimeout(()=>{render();const q=document.getElementById('slq');if(q){q.focus();q.setSelectionRange(q.value.length,q.value.length)}},400)}if(e.target.id==='pq'){st.q=e.target.value;render(true)}if(e.target.id==='cq'){st.cq=e.target.value;render(true)}if(e.target.id==='tq'){st.tq=e.target.value;render(true)}if(st.tnew){if(e.target.id==='tnotes')st.tnew.notes=e.target.value;if(e.target.dataset&&e.target.dataset.tqty!=null){st.tnew.items[+e.target.dataset.tqty].qty=e.target.value.replace(/[^0-9]/g,'');const b=document.querySelector('[data-tsave]');if(b&&!b.disabled)b.textContent='Enregistrer la dégustation ('+st.tnew.items.reduce((a,y)=>a+(+y.qty||0),0)+' bouteilles)'}}});
 document.addEventListener('change',e=>{
   if(st.tnew&&(e.target.id==='tday'||e.target.id==='tstore')){st.tnew[e.target.id==='tday'?'day':'store']=e.target.value;render();return}
