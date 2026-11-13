@@ -43,3 +43,18 @@ drop policy if exists sl_read on public.sl_launches;
 drop policy if exists sl_write on public.sl_launches;
 create policy sl_read on public.sl_launches for select to authenticated using (public.is_member());
 create policy sl_write on public.sl_launches for insert to authenticated with check (public.is_member());
+
+-- Dégustations animées : succursale, produits et bouteilles vendues pendant l'animation
+create table if not exists public.tastings(
+  id uuid primary key default gen_random_uuid(),
+  rep_name text not null,
+  store_no text not null,
+  day date not null,
+  items jsonb not null default '[]',
+  notes text,
+  created_by text,
+  created_at timestamptz not null default now()
+);
+alter table public.tastings enable row level security;
+drop policy if exists tastings_all on public.tastings;
+create policy tastings_all on public.tastings for all to authenticated using (public.is_admin() or rep_name = (public.me()).rep_name) with check (public.is_admin() or rep_name = (public.me()).rep_name);

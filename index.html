@@ -194,6 +194,7 @@ code.bm{display:block;font:12px/1.45 var(--f-mono);background:var(--sunk);paddin
     <a href="#route" data-p="route"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21s-7-6.2-7-12a7 7 0 0 1 14 0c0 5.8-7 12-7 12z"/><circle cx="12" cy="9" r="2.5"/></svg>Sur la route</a>
     <a href="#dashboard" data-p="dashboard"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg>Dashboard</a>
     <a href="#appels" data-p="appels"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2"/></svg>Appels</a>
+    <a href="#degust" data-p="degust"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 3h10l-1 7a4 4 0 0 1-8 0L7 3z"/><path d="M12 14v6M8 21h8"/></svg>Dégustations</a>
     <a href="#produits" data-p="produits"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 2h4v5l2 3v12H8V10l2-3V2z"/></svg>Produits</a>
     <a href="#synchro" data-p="synchro" id="navsync" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 11a8 8 0 0 0-14.9-3M4 13a8 8 0 0 0 14.9 3"/><path d="M4 4v4h4M20 20v-4h-4"/></svg>Synchroniser</a>
     <a href="#perf" data-p="perf"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 17l5-5 4 4 8-8"/><path d="M15 8h5v5"/></svg>Performances</a>
@@ -649,6 +650,73 @@ function sessView(x){const y=sessStats(x);const pct=y.items?Math.round(y.done/y.
       <ul class="checks">${r.it.map(z=>{const d=DONE.get(z.k),rr=resOf(z.k);return `<li><div class="body" style="flex:1;min-width:0"><span class="t">${esc(pname(z.f))}</span> ${typeChip(z.f)}<span class="w">${txt(z.o)}${z.o.v&&z.o.t!=='SLP'?' · '+money(z.o.v):''}${d?` · noté${d.by?' par '+esc(d.by):''} le ${new Date(d.at).toLocaleDateString('fr-CA',{day:'numeric',month:'short'})}`:''}</span>
         <div class="seg res" role="group" aria-label="Résultat de l'appel">${RES.map(([k,lb])=>`<button class="r-${k}" data-res="${k}" data-k="${esc(z.k)}" aria-pressed="${rr===k}">${lb}</button>`).join('')}</div></div></li>`}).join('')}</ul></div>`}).join('')||'<div class="empty pad">Aucun magasin à appeler pour ces produits.</div>'}</section>`}
 
+// ---------- Dégustations animées : table Supabase tastings si elle existe, sinon cet appareil ----------
+let TAST=[],TAST_LOCAL=false;
+async function loadTast(){const {data,error}=await SB.from('tastings').select('*').order('day',{ascending:false});
+  if(error){TAST_LOCAL=true;TAST=LS.get('tastings',[]);return}TAST=data||[]}
+async function saveTast(x){if(TAST_LOCAL){x.id=Date.now();TAST.unshift(x);LS.set('tastings',TAST);return true}
+  const {data,error}=await SB.from('tastings').insert(x).select().single();if(error){toast('Dégustation non enregistrée : '+error.message);return false}TAST.unshift(data);return true}
+async function delTast(id){const i=TAST.findIndex(x=>String(x.id)===String(id));if(i<0)return;
+  if(!TAST_LOCAL){const {error}=await SB.from('tastings').delete().eq('id',id);if(error){toast('Suppression impossible : '+error.message);return}}
+  TAST.splice(i,1);if(TAST_LOCAL)LS.set('tastings',TAST);render()}
+const tQty=x=>(x.items||[]).reduce((a,y)=>a+(+y.qty||0),0);
+const famBy=k=>F.find(f=>fk(f)===k);
+const tName=k=>{const f=famBy(k);return f?pname(f):k};
+const storeBy=no=>S.find(s=>String(s.no)===String(no));
+const isoDay=d=>{const z=new Date(d);return z.getFullYear()+'-'+String(z.getMonth()+1).padStart(2,'0')+'-'+String(z.getDate()).padStart(2,'0')};
+const dayTxt=d=>new Date(d+'T12:00:00').toLocaleDateString('fr-CA',{weekday:'short',day:'numeric',month:'short',year:'numeric'});
+function tastBars(rows,title){ // rows: [{label, sub, v}]
+  const W=400,bh=24,gap=14,pl=150,pr=34,H=rows.length*(bh+gap)+8;const max=Math.max(1,...rows.map(r=>r.v));
+  let s=`<svg class="chart" viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(title)}">`;
+  rows.forEach((r,i)=>{const y=4+i*(bh+gap),w=(W-pl-pr)*r.v/max;
+    s+=`<text x="${pl-10}" y="${y+bh/2-(r.sub?2:-4)}" text-anchor="end">${esc(r.label.length>24?r.label.slice(0,23)+'…':r.label)}</text>${r.sub?`<text x="${pl-10}" y="${y+bh/2+11}" text-anchor="end" style="font-size:9px;opacity:.7">${esc(r.sub.length>34?r.sub.slice(0,33)+'…':r.sub)}</text>`:''}
+      <rect x="${pl}" y="${y}" width="${Math.max(2,w)}" height="${bh}" rx="3" fill="var(--accent)"/><text class="v" x="${pl+w+6}" y="${y+bh/2+4}">${nf0.format(r.v)}</text>`});
+  return `<div class="eyebrow" style="margin-bottom:6px">${esc(title)}</div>`+s+'</svg>'}
+function tastTrend(list){ // ventes par dégustation, dans l'ordre chronologique
+  const a=list.slice().sort((x,y)=>x.day<y.day?-1:1).slice(-16);const W=Math.max(400,Math.min(640,a.length*80)),H=230,pl=36,pr=12,pt=22,pb=46;const max=Math.max(1,...a.map(tQty));
+  const nice=v=>{const p=Math.pow(10,Math.floor(Math.log10(v)));const m=v/p;return (m<=1?1:m<=2?2:m<=5?5:10)*p};const top=nice(max);
+  const gw=(W-pl-pr)/a.length,bw=Math.min(40,gw*.62);const y=v=>pt+(H-pt-pb)*(1-v/top);
+  let s=`<svg class="chart" viewBox="0 0 ${W} ${H}" role="img" aria-label="Bouteilles vendues par dégustation">`;
+  [0,.5,1].forEach(k=>{s+=`<line x1="${pl}" x2="${W-pr}" y1="${y(top*k)}" y2="${y(top*k)}" stroke="var(--line)"/><text x="${pl-6}" y="${y(top*k)+4}" text-anchor="end">${nf0.format(top*k)}</text>`});
+  const avg=a.reduce((m,x)=>m+tQty(x),0)/a.length;
+  a.forEach((x,i)=>{const cx=pl+gw*i+gw/2,v=tQty(x);const sn=storeBy(x.store_no);
+    s+=`<rect x="${cx-bw/2}" y="${y(v)}" width="${bw}" height="${y(0)-y(v)}" rx="3" fill="var(--accent)"><title>${esc(dayTxt(x.day))} · ${esc(sn?sn.n:'n° '+x.store_no)} : ${v} bouteilles</title></rect><text class="v" x="${cx}" y="${y(v)-6}" text-anchor="middle">${v}</text>
+      <text x="${cx}" y="${H-pb+16}" text-anchor="middle">${new Date(x.day+'T12:00:00').toLocaleDateString('fr-CA',{day:'numeric',month:'short'})}</text>${a.length<=10?`<text x="${cx}" y="${H-pb+30}" text-anchor="middle" style="font-size:10px;opacity:.7">${esc((sn?sn.n:String(x.store_no)).slice(0,14))}</text>`:''}`});
+  s+=`<line x1="${pl}" x2="${W-pr}" y1="${y(avg)}" y2="${y(avg)}" stroke="var(--ly)" stroke-width="2" stroke-dasharray="4 3"/>`;
+  return `<div class="eyebrow" style="margin-bottom:6px">Bouteilles vendues par dégustation${list.length>16?' (16 dernières)':''}</div>`+s+'</svg><div class="legend"><span><i style="background:var(--accent)"></i>Bouteilles vendues</span><span><i style="background:var(--ly)"></i>Moyenne</span></div>'}
+function tastView(){if(st.tnew)return tastNewView();
+  const list=TAST.filter(x=>x.rep_name===st.rep).sort((a,b)=>a.day<b.day?1:-1);const tot=list.reduce((a,x)=>a+tQty(x),0);
+  const byP=new Map();list.forEach(x=>(x.items||[]).forEach(y=>{const o=byP.get(y.k)||{v:0,n:0};o.v+=+y.qty||0;o.n++;byP.set(y.k,o)}));
+  const prows=[...byP].map(([k,o])=>({label:tName(k),sub:o.n+' dégustation'+(o.n>1?'s':'')+' · '+nf0.format(o.v/o.n)+' en moyenne',v:o.v})).sort((a,b)=>b.v-a.v).slice(0,10);
+  const byS=new Map();list.forEach(x=>{const o=byS.get(x.store_no)||{v:0,n:0};o.v+=tQty(x);o.n++;byS.set(x.store_no,o)});
+  const srows=[...byS].map(([no,o])=>{const s=storeBy(no);return {label:s?s.n:'Magasin '+no,sub:o.n+' dégustation'+(o.n>1?'s':'')+' · '+nf0.format(o.v/o.n)+' en moyenne',v:o.v}}).sort((a,b)=>b.v-a.v).slice(0,10);
+  const kpi=(lb,v,sub)=>`<div class="kpi"><span>${lb}</span><b>${v}</b><span>${sub}</span></div>`;const best=prows[0];
+  const m0=new Date();m0.setDate(1);const month=list.filter(x=>x.day>=isoDay(m0));
+  return `<div class="head"><div><span class="eyebrow">Territoire de ${esc(st.rep)}</span><h1>Dégustations animées</h1><p class="muted" style="margin:4px 0 0;max-width:72ch">Note chaque dégustation : la succursale, les produits et le nombre de bouteilles vendues pendant l'animation. Les graphiques se construisent à partir de ce que tu saisis.</p></div><button class="btn primary" data-tnew>Nouvelle dégustation</button></div>
+  <div class="kpis">${kpi('Dégustations',list.length,month.length+' ce mois-ci')}${kpi('Bouteilles vendues',nf0.format(tot),'pendant les animations')}${kpi('Moyenne',list.length?nf0.format(tot/list.length):'—','bouteilles par dégustation')}${kpi('Meilleur produit',best?nf0.format(best.v):'—',best?esc(best.label):'aucune donnée')}</div>
+  ${TAST_LOCAL?'<p class="muted" style="font-size:.8rem;margin:0">Les dégustations sont gardées sur cet appareil seulement tant que la table Supabase n\'est pas créée.</p>':''}
+  ${list.length?`<section class="panel"><div class="pad">${tastTrend(list)}</div></section>
+  <div class="grid2"><section class="panel"><div class="pad">${tastBars(prows,'Bouteilles vendues par produit')}</div></section><section class="panel"><div class="pad">${tastBars(srows,'Bouteilles vendues par succursale')}</div></section></div>`:''}
+  <section class="panel"><div class="panel-h"><h2>Historique</h2><span class="muted num">${list.length}</span></div><ul class="acts">${list.map(x=>{const s=storeBy(x.store_no);return `<li><div class="body" style="flex:1;min-width:0"><span class="t">${esc(s?s.n:'Magasin '+x.store_no)}</span> <span class="muted" style="font-size:.78rem">${s&&s.v&&s.v!==s.n?esc(s.v)+' · ':''}n° ${esc(String(x.store_no))}</span>
+    <div class="w">${esc(dayTxt(x.day))}${x.created_by?' · par '+esc(x.created_by):''} · <b>${tQty(x)} bouteilles</b></div>
+    <div class="w">${(x.items||[]).map(y=>esc(tName(y.k))+' : '+(+y.qty||0)).join(' · ')}</div>${x.notes?`<div class="w" style="font-style:italic">${esc(x.notes)}</div>`:''}</div>
+    <button class="btn sm" data-tdel="${x.id}">Supprimer</button></li>`}).join('')||'<li class="empty">Aucune dégustation pour l\'instant. Clique « Nouvelle dégustation ».</li>'}</ul></section>`}
+function tastNewView(){const t=st.tnew;const ms=myStores().slice().sort((a,b)=>(a.v||'').localeCompare(b.v||'')||a.n.localeCompare(b.n));
+  const q=(st.tq||'').normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase();const has=new Set(t.items.map(y=>y.k));
+  const cand=F.filter(f=>isActive(f.i)&&!has.has(fk(f))&&(!q||(f.n+' '+f.codes.join(' ')).normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase().includes(q))).sort((a,b)=>b.t3-a.t3).slice(0,q?30:12);
+  const ok=t.store&&t.day&&t.items.length;
+  return `<div class="head"><div><span class="eyebrow">Territoire de ${esc(st.rep)}</span><h1>Nouvelle dégustation</h1></div><button class="btn" data-tcancel>Annuler</button></div>
+  <section class="panel"><div class="panel-h"><h2>1. Quand et où</h2></div><div class="pad" style="display:flex;flex-wrap:wrap;gap:12px">
+    <label style="display:flex;flex-direction:column;gap:4px" class="eyebrow">Date<input type="date" class="txt" id="tday" value="${esc(t.day)}" style="max-width:200px"></label>
+    <label style="display:flex;flex-direction:column;gap:4px;flex:1;min-width:240px" class="eyebrow">Succursale<select id="tstore" class="txt"><option value="">Choisir…</option>${ms.map(s=>`<option value="${esc(String(s.no))}"${String(s.no)===String(t.store)?' selected':''}>${esc((s.v&&s.v!==s.n?s.v+' · ':'')+s.n)} (n° ${s.no})</option>`).join('')}</select></label></div></section>
+  <section class="panel"><div class="panel-h"><h2>2. Produits et ventes</h2><p>Nombre de bouteilles vendues pendant la dégustation, par produit.</p></div><div class="pad" style="display:flex;flex-direction:column;gap:12px">
+    ${t.items.length?`<ul class="acts" style="border:1px solid var(--line2);border-radius:10px">${t.items.map((y,i)=>{const f=famBy(y.k);return `<li style="align-items:center"><div class="body" style="flex:1;min-width:0"><span class="t">${esc(tName(y.k))}</span> ${f?typeChip(f):''}</div>
+      <label style="display:flex;align-items:center;gap:6px"><input class="txt" type="text" inputmode="numeric" data-tqty="${i}" value="${esc(String(y.qty??''))}" placeholder="0" aria-label="Bouteilles vendues" style="width:80px;text-align:right"><span class="muted">bout.</span></label><button class="btn sm" data-trm="${i}" aria-label="Retirer">×</button></li>`}).join('')}</ul>`:''}
+    <input type="search" id="tq" class="txt" placeholder="Ajouter un produit (nom ou code SAQ)…" value="${esc(st.tq||'')}" aria-label="Chercher un produit" style="max-width:none">
+    <div class="chips">${cand.map(f=>`<button class="pick" data-tadd="${f.i}">+ ${esc(pname(f))} ${typeChip(f)}</button>`).join('')||'<span class="muted">Aucun produit trouvé.</span>'}</div></div></section>
+  <section class="panel"><div class="panel-h"><h2>3. Notes (facultatif)</h2></div><div class="pad"><textarea id="tnotes" class="txt" rows="3" placeholder="Accueil, achalandage, commentaires des clients…" style="max-width:none">${esc(t.notes||'')}</textarea></div></section>
+  <div><button class="btn primary" data-tsave${ok?'':' disabled'}>Enregistrer la dégustation${t.items.length?` (${t.items.reduce((a,y)=>a+(+y.qty||0),0)} bouteilles)`:''}</button>${ok?'':' <span class="muted" style="font-size:.8rem">Choisis une succursale et au moins un produit.</span>'}</div>`}
+
 // actions cochées : table Supabase actions_done si elle existe, sinon cet appareil
 let DONE=new Map(),DONE_LOCAL=false;
 async function loadDone(){const {data,error}=await SB.from('actions_done').select('*');
@@ -767,7 +835,7 @@ function perfView(){const rows=(IS_ADMIN?reps:[ME.rep_name].filter(r=>reps.inclu
 function synchroView(){if(!IS_ADMIN)return '<div class="panel empty">Réservé à l\'administrateur.</div>';
   return `<div class="head"><div><span class="eyebrow">Données actuelles : période ${D.ref}, extraites le ${dataDate}</span><h1>Synchroniser EZFocus</h1></div></div>
   <section class="panel"><div class="panel-h"><h2>Mettre à jour les données</h2><p>À faire chaque matin. Tous les représentants voient les nouvelles données dès que c'est terminé.</p></div><div class="pad">${hkSyncHelp()}</div></section>`}
-const PAGES={route:routeView,dashboard:dashView,appels:callView,produits:prodsView,perf:perfView,synchro:synchroView};
+const PAGES={route:routeView,dashboard:dashView,appels:callView,degust:tastView,produits:prodsView,perf:perfView,synchro:synchroView};
 function render(keepFocus){document.getElementById('avatar').textContent=st.rep.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();document.querySelectorAll('nav.tabs a').forEach(a=>a.toggleAttribute('aria-current',a.dataset.p===st.page)||a.dataset.p===st.page&&a.setAttribute('aria-current','page'));
   document.querySelectorAll('nav.tabs a').forEach(a=>{if(a.dataset.p===st.page)a.setAttribute('aria-current','page');else a.removeAttribute('aria-current')});
   document.getElementById('view').innerHTML=PAGES[st.page]();
@@ -777,7 +845,7 @@ function fromHash(){const h=location.hash.slice(1);st.page=PAGES[h]?h:'route';st
 window.addEventListener('hashchange',fromHash);
 function openFam(i){st.fam=+i;if(st.page!=='produits'){st.page='produits';history.replaceState(null,'','#produits')}render();window.scrollTo(0,0)}
 function saveRoute(){LS.set(routeKey(),getRoute())}
-document.addEventListener('click',e=>{const t=e.target.closest('[data-gcal],[data-dt],[data-callf],[data-newsess],[data-mailnew],[data-mailfam],[data-mailsess],[data-mailback],[data-mailregen],[data-mailcopy],[data-slnew],[data-sllaunch],[data-res],[data-resall],[data-sessback],[data-opensess],[data-createsess],[data-closesess],[data-reopensess],[data-atab],[data-more],[data-calrefresh],[data-pact],[data-setact],[data-fam],[data-back],[data-ptype],[data-color],[data-settype],[data-savepitch],[data-rmphoto],[data-photo],[data-rm],[data-copystop],[data-copyday],[data-addroute]');if(!t)return;const d=t.dataset;
+document.addEventListener('click',e=>{const t=e.target.closest('[data-gcal],[data-dt],[data-callf],[data-newsess],[data-mailnew],[data-tnew],[data-tcancel],[data-tadd],[data-trm],[data-tsave],[data-tdel],[data-mailfam],[data-mailsess],[data-mailback],[data-mailregen],[data-mailcopy],[data-slnew],[data-sllaunch],[data-res],[data-resall],[data-sessback],[data-opensess],[data-createsess],[data-closesess],[data-reopensess],[data-atab],[data-more],[data-calrefresh],[data-pact],[data-setact],[data-fam],[data-back],[data-ptype],[data-color],[data-settype],[data-savepitch],[data-rmphoto],[data-photo],[data-rm],[data-copystop],[data-copyday],[data-addroute]');if(!t)return;const d=t.dataset;
   if(d.pact!=null){st.pact=d.pact;render();return}
   if(d.setact!=null){saveSet(F[st.fam],{active:d.setact==='1'},d.setact==='1'?'Produit actif : il revient dans les recommandations':'Produit inactif : retiré des recommandations');return}
   if(d.fam!=null)return openFam(d.fam);
@@ -789,6 +857,13 @@ document.addEventListener('click',e=>{const t=e.target.closest('[data-gcal],[dat
   if(d.res){const cur=resOf(d.k);setResults([d.k],cur===d.res?null:d.res);return}
   if(d.resall){setResults(d.keys.split(';;').filter(k=>!isFin(k)),d.resall);return}
   if(d.mailnew!=null||d.mailsess!=null){const x=d.mailsess!=null?sessOf(d.mailsess):null;st.mailBack=st.sess;st.mail={products:x?x.products.slice():[],store:'',kind:'auto',sess:x?x.id:null};st.mailEdit=null;st.sess='mail';render();window.scrollTo(0,0);return}
+  if(d.tnew!=null){st.tnew={day:isoDay(new Date()),store:'',items:[],notes:''};st.tq='';render();window.scrollTo(0,0);return}
+  if(d.tcancel!=null){st.tnew=null;render();window.scrollTo(0,0);return}
+  if(d.tadd!=null){st.tnew.items.push({k:fk(F[+d.tadd]),qty:''});st.tq='';render();const q=document.querySelector('[data-tqty="'+(st.tnew.items.length-1)+'"]');if(q)q.focus();return}
+  if(d.trm!=null){st.tnew.items.splice(+d.trm,1);render();return}
+  if(d.tsave!=null){const t=st.tnew;const x={rep_name:st.rep,store_no:String(t.store),day:t.day,items:t.items.map(y=>({k:y.k,qty:+y.qty||0})),notes:(t.notes||'').trim()||null,created_by:ME.rep_name.split(' ')[0],created_at:new Date().toISOString()};
+    t.busy=true;saveTast(x).then(ok=>{if(ok){st.tnew=null;toast('Dégustation enregistrée');render();window.scrollTo(0,0)}});return}
+  if(d.tdel!=null){if(confirm('Supprimer cette dégustation ?'))delTast(d.tdel);return}
   if(d.mailfam!=null){const f=F[+d.mailfam];st.mailBack=null;st.mailFam=+d.mailfam;st.mail={products:[fk(f)],store:'',kind:'auto',sess:null};st.mailEdit=null;st.sess='mail';st.fam=null;st.page='appels';history.replaceState(null,'','#appels');render();window.scrollTo(0,0);return}
   if(d.mailback!=null){if(st.mailFam!=null){const i=st.mailFam;st.mailFam=null;st.sess=null;openFam(i);return}st.sess=st.mailBack||null;render();window.scrollTo(0,0);return}
   if(d.mailregen!=null){st.mailEdit=null;render();return}
@@ -821,8 +896,9 @@ document.addEventListener('click',e=>{const t=e.target.closest('[data-gcal],[dat
   if(d.copyday!=null)return copy(getRoute().stops.map(no=>stopText(S.find(s=>s.no===no))).join('\n\n'));
 });
 document.addEventListener('keydown',e=>{if(e.key==='Enter'&&e.target.matches('tr[data-fam]'))openFam(e.target.dataset.fam)});
-document.addEventListener('input',e=>{if(e.target.id==='sessname')st.sessName=e.target.value;if((e.target.id==='mailsubj'||e.target.id==='mailbody')&&st.mailEdit){st.mailEdit[e.target.id==='mailsubj'?'subj':'body']=e.target.value;const a=document.querySelector('a[href^="mailto:"]');if(a)a.href='mailto:?subject='+encodeURIComponent(st.mailEdit.subj)+'&body='+encodeURIComponent(st.mailEdit.body)}if(e.target.id==='slq'){st.slq=e.target.value;clearTimeout(st.slqt);st.slqt=setTimeout(()=>{render();const q=document.getElementById('slq');if(q){q.focus();q.setSelectionRange(q.value.length,q.value.length)}},400)}if(e.target.id==='pq'){st.q=e.target.value;render(true)}if(e.target.id==='cq'){st.cq=e.target.value;render(true)}});
+document.addEventListener('input',e=>{if(e.target.id==='sessname')st.sessName=e.target.value;if((e.target.id==='mailsubj'||e.target.id==='mailbody')&&st.mailEdit){st.mailEdit[e.target.id==='mailsubj'?'subj':'body']=e.target.value;const a=document.querySelector('a[href^="mailto:"]');if(a)a.href='mailto:?subject='+encodeURIComponent(st.mailEdit.subj)+'&body='+encodeURIComponent(st.mailEdit.body)}if(e.target.id==='slq'){st.slq=e.target.value;clearTimeout(st.slqt);st.slqt=setTimeout(()=>{render();const q=document.getElementById('slq');if(q){q.focus();q.setSelectionRange(q.value.length,q.value.length)}},400)}if(e.target.id==='pq'){st.q=e.target.value;render(true)}if(e.target.id==='cq'){st.cq=e.target.value;render(true)}if(e.target.id==='tq'){st.tq=e.target.value;render(true)}if(st.tnew){if(e.target.id==='tnotes')st.tnew.notes=e.target.value;if(e.target.dataset&&e.target.dataset.tqty!=null){st.tnew.items[+e.target.dataset.tqty].qty=e.target.value.replace(/[^0-9]/g,'');const b=document.querySelector('[data-tsave]');if(b&&!b.disabled)b.textContent='Enregistrer la dégustation ('+st.tnew.items.reduce((a,y)=>a+(+y.qty||0),0)+' bouteilles)'}}});
 document.addEventListener('change',e=>{
+  if(st.tnew&&(e.target.id==='tday'||e.target.id==='tstore')){st.tnew[e.target.id==='tday'?'day':'store']=e.target.value;render();return}
   if(e.target.matches&&e.target.matches('[data-mailstore]')){st.mail.store=e.target.value;st.mailEdit=null;render();return}
   if(e.target.matches&&e.target.matches('[data-mailkind]')){st.mail.kind=e.target.value;st.mailEdit=null;render();return}
   if(e.target.matches&&e.target.matches('[data-slf]')){st.slf=e.target.value;render();return}
@@ -836,7 +912,7 @@ document.addEventListener('change',e=>{
         if(error){toast('Photo non enregistrée : '+error.message);return}
         const url=SB.storage.from('product-photos').getPublicUrl(path).data.publicUrl;const p=photosOf(f);p.unshift(url);saveSet(f,{photos:p},'Photo ajoutée')},'image/jpeg',.82)};img.src=rd.result};rd.readAsDataURL(file)}
 });
-Promise.all([loadSL().catch(()=>{SLL_LOCAL=true;SLL=LS.get('sl',[])}),loadDone().catch(()=>{DONE_LOCAL=true}),loadSess().catch(()=>{SESS_LOCAL=true;SESS=LS.get('sessions',[])})]).finally(()=>{if(st.page==='dashboard'||st.page==='appels')render()});
+Promise.all([loadSL().catch(()=>{SLL_LOCAL=true;SLL=LS.get('sl',[])}),loadDone().catch(()=>{DONE_LOCAL=true}),loadSess().catch(()=>{SESS_LOCAL=true;SESS=LS.get('sessions',[])}),loadTast().catch(()=>{TAST_LOCAL=true;TAST=LS.get('tastings',[])})]).finally(()=>{if(st.page==='dashboard'||st.page==='appels'||st.page==='degust')render()});
 fromHash();
 }
 boot();
