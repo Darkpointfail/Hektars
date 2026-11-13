@@ -67,4 +67,6 @@ alter table public.product_settings add column if not exists sl_qty numeric;
 alter table public.product_settings add column if not exists sl_start date;
 alter table public.product_settings add column if not exists sl_period text;
 alter table public.product_settings add column if not exists custom jsonb;
+alter table public.product_settings add column if not exists sl_wh numeric;
+alter table public.product_settings add column if not exists sl_wh_at timestamptz;
 notify pgrst, 'reload schema';
