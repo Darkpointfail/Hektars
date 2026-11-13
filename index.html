@@ -940,8 +940,15 @@ function emailingView(){if(st.ctImp)return ctImportView();if(st.camp)return camp
   const terrs=[...new Set(mine.map(c=>c.territory).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'fr'));const nSel=list.filter(c=>sel.has(String(c.id))).length;
   const kpi=(lb,v,sub)=>`<div class="kpi"><span>${lb}</span><b>${v}</b><span>${sub}</span></div>`;
   return `<div class="head"><div><span class="eyebrow">Contacts de ${esc(st.rep)}</span><h1>Emailing</h1><p class="muted" style="margin:4px 0 0;max-width:72ch">Importe tes contacts (courriel, nom, fonction, territoire), filtre-les, puis prépare une campagne : l'envoi se fait depuis ta messagerie, en copie cachée.</p></div>
-    <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn" data-ctimp>Importer des contacts</button><button class="btn primary" data-campnew${nSel?'':' disabled'}>Nouvelle campagne${nSel?` (${nSel})`:''}</button></div></div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn" data-ctadd>Ajouter un contact</button><button class="btn" data-ctimp>Importer des contacts</button><button class="btn primary" data-campnew${nSel?'':' disabled'}>Nouvelle campagne${nSel?` (${nSel})`:''}</button></div></div>
   <div class="kpis">${kpi('Contacts',mine.length,'importés')}${kpi('Territoires',terrs.length,terrs.slice(0,3).join(', ')||'à classer')}${kpi('Sans territoire',mine.filter(c=>!c.territory).length,'à classer')}${kpi('Campagnes',CAMP.filter(x=>x.rep_name===st.rep).length,'préparées')}</div>
+  ${st.ctAdd?`<section class="panel"><div class="panel-h"><h2>Nouveau contact</h2></div><div class="pad slform" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;align-items:end">
+    <label>Courriel<input id="cta_email" type="email" autocomplete="off" placeholder="prenom.nom@saq.qc.ca"></label>
+    <label>Nom<input id="cta_name" autocomplete="off" placeholder="Prénom Nom"></label>
+    <label>Fonction<input id="cta_role" list="cta_roles" autocomplete="off" placeholder="ex. Conseiller en vin"><datalist id="cta_roles">${[...new Set(mine.map(c=>c.role).filter(Boolean).concat(['Directeur','Directeur adjoint','Conseiller en vin','COS','Magasin']))].map(r=>`<option value="${esc(r)}">`).join('')}</datalist></label>
+    <label>Territoire<select id="cta_terr"><option value="">À classer</option>${TERR.map(t=>`<option${(st.ctaT||st.ctt)===t?' selected':''}>${t}</option>`).join('')}</select></label>
+    <label>Succursale (facultatif)<select id="cta_store"><option value="">Aucune</option>${myStores().slice().sort((a,b)=>a.n.localeCompare(b.n,'fr')).map(x=>`<option value="${x.no}">${esc(x.n)} (n° ${x.no})</option>`).join('')}</select></label>
+    <div style="display:flex;gap:8px"><button class="btn primary" data-ctaddgo>Ajouter</button><button class="btn" data-ctaddx>Annuler</button></div></div></section>`:''}
   ${CT_LOCAL?'<p class="muted" style="font-size:.8rem;margin:0">Les contacts sont gardés sur cet appareil seulement tant que la table Supabase n\'est pas créée.</p>':''}
   <div class="filters"><input type="search" id="ctq" placeholder="Nom, courriel, succursale…" value="${esc(st.ctq||'')}" aria-label="Chercher un contact">
     <select data-ctt aria-label="Territoire" class="sel"><option value="">Tous les territoires</option>${TERR.filter(t=>terrs.includes(t)||t===st.ctt).concat(terrs.filter(t=>!TERR.includes(t))).map(t=>`<option${st.ctt===t?' selected':''}>${esc(t)}</option>`).join('')}</select>
@@ -1165,8 +1172,15 @@ document.addEventListener('change',e=>{
 });
 // événements Emailing
 function campMailto(i){const c=st.camp;const em=CT.filter(x=>c.ids.includes(String(x.id))).map(x=>x.email).slice(i*40,i*40+40);return 'mailto:?bcc='+encodeURIComponent(em.join(','))+'&subject='+encodeURIComponent(c.subject||'')+'&body='+encodeURIComponent(c.body||'')}
-document.addEventListener('click',e=>{const t=e.target.closest('[data-ctimp],[data-ctimpx],[data-ctparse],[data-ctimpgo],[data-ctdel],[data-ctdelsel],[data-campnew],[data-campx],[data-campcopy],[data-campcsv],[data-campsave],[data-campopen],[data-campmt]');if(!t)return;const d=t.dataset;
+document.addEventListener('click',e=>{const t=e.target.closest('[data-ctadd],[data-ctaddx],[data-ctaddgo],[data-ctimp],[data-ctimpx],[data-ctparse],[data-ctimpgo],[data-ctdel],[data-ctdelsel],[data-campnew],[data-campx],[data-campcopy],[data-campcsv],[data-campsave],[data-campopen],[data-campmt]');if(!t)return;const d=t.dataset;
   if(d.campmt!=null){const all=[...document.querySelectorAll('[data-campmt]')];t.href=campMailto(all.indexOf(t));return}
+  if(d.ctadd!=null){st.ctAdd=true;render();const i=document.getElementById('cta_email');if(i)i.focus();return}
+  if(d.ctaddx!=null){st.ctAdd=false;render();return}
+  if(d.ctaddgo!=null){const v=id=>(document.getElementById(id).value||'').trim();const email=v('cta_email').toLowerCase();
+    if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)){toast('Courriel invalide');return}if(myCt().some(c=>c.email.toLowerCase()===email)){toast('Ce courriel est déjà dans tes contacts');return}
+    const sno=v('cta_store');const so=sno?S.find(x=>String(x.no)===sno):null;
+    st.ctaT=v('cta_terr');const row={email,name:v('cta_name'),role:v('cta_role'),territory:v('cta_terr'),store_no:sno,store_name:so?so.n:'',city:so?so.v||'':'',rep_name:st.rep,created_by:(ME.rep_name||'').split(' ')[0],created_at:new Date().toISOString()};
+    t.disabled=true;ctInsert([row]).then(ok=>{if(ok){toast('Contact ajouté');['cta_email','cta_name','cta_role'].forEach(id=>{const el=document.getElementById(id);if(el)el.value=''});render();const i=document.getElementById('cta_email');if(i)i.focus()}else t.disabled=false});return}
   if(d.ctimp!=null){st.ctImp={};render();window.scrollTo(0,0);return}
   if(d.ctimpx!=null){st.ctImp=null;render();return}
   if(d.ctparse!=null){const v=document.getElementById('ctpaste').value;st.ctImp.paste=v;st.ctImp.res=importRows(parseCSV(v));render();return}
