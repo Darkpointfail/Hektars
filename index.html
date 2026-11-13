@@ -720,7 +720,7 @@ function famView(f){const ops=byFam[f.i];const mine=ops.filter(o=>S[o.s].rep===s
   const cnt=t=>mine.filter(o=>o.t===t).length;
   return `<div><button class="btn sm" data-back>← Tous les produits</button></div>
   <div class="head"><div><span class="eyebrow">${esc(f.cat)} · code SAQ ${f.codes.join(', ')}</span><h1>${esc(pname(f))}</h1></div>
-   <div style="display:flex;flex-wrap:wrap;gap:10px"><div class="seg" role="group" aria-label="Statut du produit"><span class="eyebrow" style="align-self:center">Statut</span><button data-setact="1" aria-pressed="${isActive(f.i)}"${ro}>Actif</button><button data-setact="0" aria-pressed="${!isActive(f.i)}"${ro}>Inactif</button></div>
+   <div style="display:flex;flex-wrap:wrap;gap:10px"><button class="btn primary" data-mailfam="${f.i}">Rédiger un courriel</button><div class="seg" role="group" aria-label="Statut du produit"><span class="eyebrow" style="align-self:center">Statut</span><button data-setact="1" aria-pressed="${isActive(f.i)}"${ro}>Actif</button><button data-setact="0" aria-pressed="${!isActive(f.i)}"${ro}>Inactif</button></div>
    <div class="seg" role="group" aria-label="Type SAQ du produit"><span class="eyebrow" style="align-self:center">Type SAQ${prodType(f)?'':' (à saisir)'}</span>${['RA','SA','SL'].map(t=>`<button data-settype="${t}" aria-pressed="${prodType(f)===t}"${ro}>${t}</button>`).join('')}</div></div></div>
   ${isActive(f.i)?'':'<div class="demo"><b>Produit inactif.</b> Il n\'apparaît plus dans Sur la route ni dans les actions urgentes. Ses ventes restent visibles ici.</div>'}
   ${(()=>{const sv=setOf(f);return sv.updated_by?`<div class="muted" style="font-size:.76rem">Fiche modifiée le ${new Date(sv.updated_at).toLocaleDateString('fr-CA')} par ${esc(sv.updated_by)}</div>`:''})()}
@@ -777,7 +777,7 @@ function fromHash(){const h=location.hash.slice(1);st.page=PAGES[h]?h:'route';st
 window.addEventListener('hashchange',fromHash);
 function openFam(i){st.fam=+i;if(st.page!=='produits'){st.page='produits';history.replaceState(null,'','#produits')}render();window.scrollTo(0,0)}
 function saveRoute(){LS.set(routeKey(),getRoute())}
-document.addEventListener('click',e=>{const t=e.target.closest('[data-gcal],[data-dt],[data-callf],[data-newsess],[data-mailnew],[data-mailsess],[data-mailback],[data-mailregen],[data-mailcopy],[data-slnew],[data-sllaunch],[data-res],[data-resall],[data-sessback],[data-opensess],[data-createsess],[data-closesess],[data-reopensess],[data-atab],[data-more],[data-calrefresh],[data-pact],[data-setact],[data-fam],[data-back],[data-ptype],[data-color],[data-settype],[data-savepitch],[data-rmphoto],[data-photo],[data-rm],[data-copystop],[data-copyday],[data-addroute]');if(!t)return;const d=t.dataset;
+document.addEventListener('click',e=>{const t=e.target.closest('[data-gcal],[data-dt],[data-callf],[data-newsess],[data-mailnew],[data-mailfam],[data-mailsess],[data-mailback],[data-mailregen],[data-mailcopy],[data-slnew],[data-sllaunch],[data-res],[data-resall],[data-sessback],[data-opensess],[data-createsess],[data-closesess],[data-reopensess],[data-atab],[data-more],[data-calrefresh],[data-pact],[data-setact],[data-fam],[data-back],[data-ptype],[data-color],[data-settype],[data-savepitch],[data-rmphoto],[data-photo],[data-rm],[data-copystop],[data-copyday],[data-addroute]');if(!t)return;const d=t.dataset;
   if(d.pact!=null){st.pact=d.pact;render();return}
   if(d.setact!=null){saveSet(F[st.fam],{active:d.setact==='1'},d.setact==='1'?'Produit actif : il revient dans les recommandations':'Produit inactif : retiré des recommandations');return}
   if(d.fam!=null)return openFam(d.fam);
@@ -789,7 +789,8 @@ document.addEventListener('click',e=>{const t=e.target.closest('[data-gcal],[dat
   if(d.res){const cur=resOf(d.k);setResults([d.k],cur===d.res?null:d.res);return}
   if(d.resall){setResults(d.keys.split(';;').filter(k=>!isFin(k)),d.resall);return}
   if(d.mailnew!=null||d.mailsess!=null){const x=d.mailsess!=null?sessOf(d.mailsess):null;st.mailBack=st.sess;st.mail={products:x?x.products.slice():[],store:'',kind:'auto',sess:x?x.id:null};st.mailEdit=null;st.sess='mail';render();window.scrollTo(0,0);return}
-  if(d.mailback!=null){st.sess=st.mailBack||null;render();window.scrollTo(0,0);return}
+  if(d.mailfam!=null){const f=F[+d.mailfam];st.mailBack=null;st.mailFam=+d.mailfam;st.mail={products:[fk(f)],store:'',kind:'auto',sess:null};st.mailEdit=null;st.sess='mail';st.fam=null;st.page='appels';history.replaceState(null,'','#appels');render();window.scrollTo(0,0);return}
+  if(d.mailback!=null){if(st.mailFam!=null){const i=st.mailFam;st.mailFam=null;st.sess=null;openFam(i);return}st.sess=st.mailBack||null;render();window.scrollTo(0,0);return}
   if(d.mailregen!=null){st.mailEdit=null;render();return}
   if(d.mailcopy!=null){const t=document.getElementById('mailsubj').value+'\n\n'+document.getElementById('mailbody').value;(navigator.clipboard?navigator.clipboard.writeText(t):Promise.reject()).then(()=>toast('Courriel copié'),()=>{const ta=document.getElementById('mailbody');ta.select();document.execCommand('copy');toast('Courriel copié')});return}
   if(d.slnew!=null){st.sess='sl';render();window.scrollTo(0,0);return}
