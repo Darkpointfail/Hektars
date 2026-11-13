@@ -166,7 +166,8 @@ svg.chart text.v{fill:var(--ink);font-weight:600}
   .side-foot{margin:0 0 0 auto;flex-direction:row}
   .who{padding:6px 10px}.who label span{display:none}.stamp{display:none}
   nav.tabs{position:fixed;left:0;right:0;bottom:0;z-index:6;background:var(--side);flex-direction:row;justify-content:space-around;padding-bottom:env(safe-area-inset-bottom,0px);padding-left:env(safe-area-inset-left,0px);padding-right:env(safe-area-inset-right,0px)}
-  nav.tabs a{flex-direction:column;gap:3px;font-size:.66rem;padding:9px 4px;flex:1;justify-content:center;border-radius:0}
+  nav.tabs{overflow-x:auto;scrollbar-width:none}nav.tabs::-webkit-scrollbar{display:none}
+  nav.tabs a{flex-direction:column;gap:3px;font-size:.66rem;padding:9px 4px;flex:1 0 62px;justify-content:center;border-radius:0;text-align:center;white-space:nowrap}
   nav.tabs a[aria-current=page]{box-shadow:inset 0 3px 0 #e892ab;background:none}
   main{padding-block:20px 100px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
   .toast{bottom:calc(80px + env(safe-area-inset-bottom,0px))}
@@ -202,6 +203,7 @@ code.bm{display:block;font:12px/1.45 var(--f-mono);background:var(--sunk);paddin
     <a href="#emailing" data-p="emailing"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16v12H5.2L4 17.2z"/><path d="M8 9h8M8 12h5"/></svg>Emailing</a>
     <a href="#produits" data-p="produits"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 2h4v5l2 3v12H8V10l2-3V2z"/></svg>Produits</a>
     <a href="#brief" data-p="brief"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/></svg>Brief du lundi</a>
+    <a href="#perf" data-p="perf"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 20h18"/><rect x="5" y="11" width="3" height="7"/><rect x="10.5" y="6" width="3" height="12"/><rect x="16" y="9" width="3" height="9"/></svg>Performance</a>
     <a href="#synchro" data-p="synchro" id="navsync" hidden></a>
   </nav>
   <div class="side-foot">
@@ -832,24 +834,30 @@ function famView(f){const ops=byFam[f.i];const mine=ops.filter(o=>S[o.s].rep===s
    </div>
   </div>`}
 
-// ---------- Performances ----------
-function perfView(){const rows=(IS_ADMIN?reps:[ME.rep_name].filter(r=>reps.includes(r))).map(r=>{const ms=S.filter(s=>s.rep===r&&!s.inactive);const t13=ms.reduce((a,s)=>a+s.t13,0),l13=ms.reduce((a,s)=>a+s.l13,0),t3=ms.reduce((a,s)=>a+s.t3,0),l3=ms.reduce((a,s)=>a+s.l3,0);
-    const vis=ms.filter(s=>s.days!=null&&s.days<=60).length;return {r,n:ms.length,t13,l13,t3,l3,vis,pot:ms.reduce((a,s)=>a+s.pot,0)}}).sort((a,b)=>b.t13-a.t13);
-  const max=Math.max(...rows.flatMap(x=>[x.t13,x.l13]));
-  const W=620,rh=46,pl=150,pr=70,H=rows.length*rh+10;
+// ---------- Performance par agent ----------
+function perfView(){const list=IS_ADMIN?reps:[ME.rep_name].filter(r=>reps.includes(r));const d60=Date.now()-60*DAYMS;
+  const rows=list.map(r=>{const ri=D.reps.indexOf(r);const ms=S.filter(s=>s.rep===r&&!s.inactive);const sm=k=>ms.reduce((a,s)=>a+(s[k]||0),0);
+    const t13=sm('t13'),l13=sm('l13'),t3=sm('t3'),l3=sm('l3');const vis=ms.filter(s=>s.days!=null&&s.days<=60).length;
+    const ss=SESS.filter(x=>x.rep_name===r).map(sessStats);const n={cmd:0,prom:0,non:0,nr:0};let done=0;ss.forEach(y=>{done+=y.done;Object.keys(n).forEach(k=>n[k]+=y.n[k]||0)});const ab=n.cmd+n.prom+n.non;
+    const ta=TAST.filter(x=>x.rep_name===r);const ta60=ta.filter(x=>Date.parse(x.day)>=d60);
+    let sl3=0,slL3=0;F.forEach(f=>{if(prodType(f)!=='SL')return;const a=AGG[f.i+'|'+ri];if(a){sl3+=a[0].slice(-3).reduce((x,y)=>x+y,0);slL3+=a[1].slice(-3).reduce((x,y)=>x+y,0)}});
+    return {r,n:ms.length,t13,l13,t3,l3,vis,sess:ss.length,done,cmd:n.cmd,prom:n.prom,rate:ab?n.cmd/ab:null,ta:ta.length,ta60:ta60.length,bt:ta.reduce((a,x)=>a+tQty(x),0),btAvg:ta.length?ta.reduce((a,x)=>a+tQty(x),0)/ta.length:null,sl3,slL3}}).sort((a,b)=>b.t13-a.t13);
+  const tot=k=>rows.reduce((a,x)=>a+(x[k]||0),0);
+  const max=Math.max(1,...rows.flatMap(x=>[x.t13,x.l13]));const W=620,rh=46,pl=150,pr=70,H=rows.length*rh+10;
   let svg=`<svg class="chart" viewBox="0 0 ${W} ${H}" role="img" aria-label="Ventes R13 par représentant">`;
   rows.forEach((x,i)=>{const y=i*rh+6;const w=v=>(W-pl-pr)*v/max;const me=x.r===st.rep;
-    svg+=`<text x="${pl-10}" y="${y+20}" text-anchor="end" class="${me?'v':''}">${esc(x.r)}</text>`;
-    svg+=`<rect x="${pl}" y="${y+4}" width="${w(x.l13)}" height="14" fill="var(--ly)" rx="2"/><rect x="${pl}" y="${y+20}" width="${w(x.t13)}" height="14" fill="var(--accent)" rx="2" ${me?'':'opacity=".75"'}/>`;
-    svg+=`<text x="${pl+w(x.t13)+6}" y="${y+31}" class="v">${nf0.format(x.t13)}</text><text x="${pl+w(x.l13)+6}" y="${y+15}">${nf0.format(x.l13)}</text>`});
+    svg+=`<text x="${pl-10}" y="${y+20}" text-anchor="end" class="${me?'v':''}">${esc(x.r)}</text><rect x="${pl}" y="${y+4}" width="${w(x.l13)}" height="14" fill="var(--ly)" rx="2"/><rect x="${pl}" y="${y+20}" width="${w(x.t13)}" height="14" fill="var(--accent)" rx="2" ${me?'':'opacity=".75"'}/>
+      <text x="${pl+w(x.t13)+6}" y="${y+31}" class="v">${nf0.format(x.t13)}</text><text x="${pl+w(x.l13)+6}" y="${y+15}">${nf0.format(x.l13)}</text>`});
   svg+='</svg>';
-  return `<div class="head"><div><span class="eyebrow">${IS_ADMIN?"Toute l'équipe":esc(ME.rep_name)} · période ${D.ref}</span><h1>Performances</h1></div></div>
-  ${(()=>{const sum=(r,k)=>{const a=Array(13).fill(0);S.filter(s=>s.rep===r&&!s.inactive).forEach(s=>s[k].forEach((v,i)=>a[i]+=v));return a};
-    return `<section class="panel"><div class="panel-h"><h2>${esc(st.rep)} dans le temps</h2><p>Ventes Hektars de son territoire par période SAQ, en caisses de 9 L.</p></div><div class="pad">${lineChart(sum(st.rep,'pt'),sum(st.rep,'pl'),'Ventes par période (cs)')}</div></section>`})()}
-  <section class="panel"><div class="panel-h"><h2>Ventes R13 par représentant (caisses 9 L)</h2></div><div class="pad">${svg}<div class="legend"><span><i style="background:var(--ly)"></i>An passé</span><span><i style="background:var(--accent)"></i>Cette année</span></div></div></section>
-  <section class="panel tablebox"><table><thead><tr><th>Représentant</th><th class="n">Magasins</th><th class="n">R13 (cs)</th><th class="n">vs an passé</th><th class="n">R3 vs an passé</th><th class="n">Visités 60 j</th><th class="n">Potentiel</th></tr></thead><tbody>
-  ${rows.map(x=>`<tr${x.r===st.rep?' style="font-weight:600"':''}><td>${esc(x.r)}</td><td class="n">${x.n}</td><td class="n">${nf0.format(x.t13)}</td><td class="n">${pctH(gr(x.t13,x.l13))}</td><td class="n">${pctH(gr(x.t3,x.l3))}</td><td class="n">${nf0.format(x.vis/x.n*100)} %</td><td class="n">${money(x.pot)}</td></tr>`).join('')}
-  </tbody></table></section>`}
+  const kpi=(lb,v,sub)=>`<div class="kpi"><span>${lb}</span><b>${v}</b><span>${sub}</span></div>`;
+  const sum=k=>{const a=Array(13).fill(0);S.filter(s=>s.rep===st.rep&&!s.inactive).forEach(s=>(s[k]||[]).forEach((v,i)=>a[i]+=v));return a};
+  return `<div class="head"><div><span class="eyebrow">${IS_ADMIN?"Toute l'équipe":esc(ME.rep_name)} · EZFocus période ${D.ref}</span><h1>Performance par agent</h1><p class="muted" style="margin:4px 0 0;max-width:74ch">Ventes Hektars en caisses de 9 L (EZFocus), visites, résultats des sessions d'appels et dégustations notées dans l'outil.</p></div></div>
+  <div class="kpis">${kpi('Ventes R13',nf0.format(tot('t13'))+' cs',pctH(gr(tot('t13'),tot('l13')))+' vs an passé')}${kpi('3 dernières périodes',nf0.format(tot('t3'))+' cs',pctH(gr(tot('t3'),tot('l3')))+' vs an passé')}${kpi('SL vendus',cs(tot('sl3'))+' cs','3 dernières périodes')}${kpi('Appels notés',tot('done'),tot('cmd')+' commandés')}${kpi('Dégustations',tot('ta'),nf0.format(tot('bt'))+' bouteilles vendues')}</div>
+  <section class="panel tablebox"><table><thead><tr><th>Agent</th><th class="n">Mag.</th><th class="n">R13 cs</th><th class="n">vs an p.</th><th class="n">R3 vs an p.</th><th class="n">SL R3 cs</th><th class="n">Visités 60 j</th><th class="n">Commandés</th><th class="n">Dégust.</th></tr></thead><tbody>
+  ${rows.map(x=>`<tr${x.r===st.rep?' style="font-weight:600"':''}><td style="white-space:nowrap">${esc(x.r)}</td><td class="n">${x.n}</td><td class="n">${nf0.format(x.t13)}</td><td class="n">${pctH(gr(x.t13,x.l13))}</td><td class="n">${pctH(gr(x.t3,x.l3))}</td><td class="n">${cs(x.sl3)}${x.slL3?'<br><span style="font-size:.72rem">'+pctH(gr(x.sl3,x.slL3))+'</span>':''}</td><td class="n">${x.n?nf0.format(x.vis/x.n*100)+' %':'—'}</td><td class="n">${x.cmd}${x.done?`<br><span class="muted" style="font-size:.72rem">sur ${x.done} notés · taux ${pctTxt(x.rate)}${x.prom?' · +'+x.prom+' prom.':''}</span>`:''}</td><td class="n">${x.ta}${x.ta?`<br><span class="muted" style="font-size:.72rem">${nf0.format(x.btAvg)} bout. en moy.${x.ta60?' · '+x.ta60+' sur 60 j':''}</span>`:''}</td></tr>`).join('')||'<tr><td colspan="9" class="empty">Aucune donnée.</td></tr>'}
+  </tbody></table></section>
+  ${rows.length>1?`<section class="panel"><div class="panel-h"><h2>Ventes R13 par agent (caisses 9 L)</h2></div><div class="pad">${svg}<div class="legend"><span><i style="background:var(--ly)"></i>An passé</span><span><i style="background:var(--accent)"></i>Cette année</span></div></div></section>`:''}
+  <section class="panel"><div class="panel-h"><h2>${esc(st.rep)} dans le temps</h2><p>Ventes Hektars du territoire par période SAQ, en caisses de 9 L.</p></div><div class="pad">${lineChart(sum('pt'),sum('pl'),'Ventes par période (cs)')}</div></section>`}
 
 // ---------- Suivi SL : objectif 80 % du stock d'entrée vendu en 6 semaines ----------
 // Périodes SAQ : 13 périodes de 4 semaines ; P01 commence le dimanche 29 mars 2026 (estimation, modifiable dans la fiche)
@@ -1142,7 +1150,7 @@ function mailPanel(){const L=mailSL();const sel=st.mailSel||[];const txt=mailTex
 function synchroView(){if(!IS_ADMIN)return '<div class="panel empty">Réservé à l\'administrateur.</div>';
   return `<div class="head"><div><span class="eyebrow">Données actuelles : période ${D.ref}, extraites le ${dataDate}</span><h1>Synchroniser EZFocus</h1></div></div>
   <section class="panel"><div class="panel-h"><h2>Mettre à jour les données</h2><p>À faire chaque matin. Tous les représentants voient les nouvelles données dès que c'est terminé.</p></div><div class="pad">${hkSyncHelp()}</div></section>`}
-const PAGES={aujourdhui:todayView,appels:callView,suivisl:slSuiviView,degust:tastView,emailing:emailingView,produits:prodsView,brief:briefView,synchro:synchroView};
+const PAGES={aujourdhui:todayView,appels:callView,suivisl:slSuiviView,degust:tastView,emailing:emailingView,produits:prodsView,brief:briefView,perf:perfView,synchro:synchroView};
 function render(keepFocus){document.getElementById('avatar').textContent=st.rep.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();document.querySelectorAll('nav.tabs a').forEach(a=>a.toggleAttribute('aria-current',a.dataset.p===st.page)||a.dataset.p===st.page&&a.setAttribute('aria-current','page'));
   document.querySelectorAll('nav.tabs a').forEach(a=>{if(a.dataset.p===st.page)a.setAttribute('aria-current','page');else a.removeAttribute('aria-current')});
   let html;try{html=PAGES[st.page]()}catch(err){console.error(err);html=`<div class="panel pad" style="border-color:var(--R)"><b>Cette page n'a pas pu s'afficher.</b><p class="muted" style="margin:6px 0">Envoie une capture de ce message à Claude pour qu'il corrige.</p><pre style="white-space:pre-wrap;font-size:.75rem;margin:0">${esc(String(err&&err.stack||err).split('\n').slice(0,4).join('\n'))}</pre><p style="margin:10px 0 0"><a class="btn sm" href="#aujourdhui">Aller à Aujourd'hui</a></p></div>`}
