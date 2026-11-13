@@ -130,7 +130,7 @@ ul.checks input:checked+.body .t{text-decoration:line-through;color:var(--muted)
 .agrp.fin{opacity:.6}textarea.txt{resize:vertical;font-family:inherit}input.txt,textarea.txt{font:inherit;font-size:1rem;width:100%;max-width:480px;padding:10px 12px;border-radius:8px;border:1px solid var(--line);background:var(--surface);color:var(--ink)}
 .seg.res{margin-top:8px}.seg.res button{font-size:.76rem;padding:5px 10px}
 .seg.res .r-cmd[aria-pressed=true]{background:var(--good);border-color:var(--good);color:#fff}.seg.res .r-prom[aria-pressed=true]{background:var(--S);border-color:var(--S);color:#fff}.seg.res .r-non[aria-pressed=true]{background:var(--R);border-color:var(--R);color:#fff}.seg.res .r-nr[aria-pressed=true]{background:var(--P);border-color:var(--P);color:#fff}
-.slform{display:flex;flex-wrap:wrap;gap:14px}.slform label{display:flex;flex-direction:column;gap:6px;font-size:.78rem;font-weight:600;color:var(--muted)}.slform select,.slform input{font:inherit;font-size:.95rem;padding:9px 10px;border-radius:8px;border:1px solid var(--line);background:var(--surface);color:var(--ink);min-width:200px}
+.slform{display:flex;flex-wrap:wrap;gap:14px}.slform>label{flex:1 1 180px}.slform label{display:flex;flex-direction:column;gap:6px;font-size:.78rem;font-weight:600;color:var(--muted)}.slform select,.slform input{font:inherit;font-size:.95rem;padding:9px 10px;border-radius:8px;border:1px solid var(--line);background:var(--surface);color:var(--ink);min-width:200px}
 .slt{font-size:.86rem}.slt-h,.slr summary{display:grid;grid-template-columns:minmax(0,2.4fr) repeat(3,minmax(64px,1fr));gap:10px;padding:10px 18px;align-items:center}
 .slt-h{font-size:.7rem;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:600;border-bottom:1px solid var(--line)}.slr{border-bottom:1px solid var(--line2)}.slr summary{cursor:pointer;list-style:none}.slr summary::-webkit-details-marker{display:none}.slr summary:hover{background:var(--sunk)}
 .slr-b{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px;padding:4px 18px 16px}.slr-b h4{margin:6px 0;font-size:.78rem;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)}.slr-b ul{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px;font-size:.82rem}
@@ -196,7 +196,8 @@ code.bm{display:block;font:12px/1.45 var(--f-mono);background:var(--sunk);paddin
   <div class="brand"><span class="mark"><img src="img/mark.png" alt=""></span><span><b>Hektars</b><small>Terrain</small></span></div>
   <nav class="tabs" aria-label="Pages">
     <a href="#aujourdhui" data-p="aujourdhui"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21s-7-6.2-7-12a7 7 0 0 1 14 0c0 5.8-7 12-7 12z"/><circle cx="12" cy="9" r="2.5"/></svg>Aujourd'hui</a>
-    <a href="#appels" data-p="appels"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2"/></svg>Appels et SL</a>
+    <a href="#appels" data-p="appels"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2"/></svg>Appels</a>
+    <a href="#suivisl" data-p="suivisl"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 20h18"/><path d="M6 16V10M11 16V6M16 16v-4"/><path d="M19 4l-3 3"/></svg>Suivi SL</a>
     <a href="#degust" data-p="degust"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 2h8l-1 7a3 3 0 0 1-6 0z"/><path d="M12 12v8M8 21h8"/></svg>Dégustations</a>
     <a href="#produits" data-p="produits"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 2h4v5l2 3v12H8V10l2-3V2z"/></svg>Produits</a>
     <a href="#brief" data-p="brief"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/></svg>Brief du lundi</a>
@@ -318,6 +319,8 @@ function startApp(){
 const D=window.__D;
 const S=D.S.map(a=>({no:a[0],n:a[1],v:a[2],rep:D.reps[a[3]],ri:a[3],ban:a[4],rang:a[5],lv:a[6],nv:a[7],days:a[8],t13:a[9],l13:a[10],t3:a[11],l3:a[12],inactive:!!a[13],pt:a[14],pl:a[15],sku:a[16]}));
 const F=D.F.map(a=>({n:a[0],fmt:a[1],px:a[2],type:a[3],cat:a[4],col:a[5],pays:a[6],cep:a[7],app:a[8],codes:a[9],dpc:a[10],t13:a[11],l13:a[12],t3:a[13],l3:a[14],nT13:a[15],nL13:a[16],nT3:a[17],nObl:a[18]}));
+Object.values(SETTINGS).forEach(r=>{const c=r.custom;if(!c||!c.n)return;if(F.some(f=>f.n+'|'+f.fmt===r.fam_key))return;
+  F.push({n:c.n,fmt:+c.fmt||750,px:+c.px||0,type:'',cat:c.color||'Autre',col:'',pays:c.pays||'',cep:'',app:'',codes:c.code?[String(c.code)]:[],dpc:0,t13:0,l13:0,t3:0,l3:0,nT13:0,nL13:0,nT3:0,nObl:0,custom:c})});
 const OBLSET=D.OBL.map(l=>new Set(l));
 const isObl=(si,fi)=>OBLSET[si].has(fi);
 const AGG={};Object.entries(D.agg).forEach(([k,v])=>AGG[k]=v);
@@ -360,6 +363,7 @@ function colorOf(cat){const c=cat.toLowerCase();
 const COLORS={'Rouge':'#8c1c2c','Blanc':'#e8d98a','Rosé':'#f0a3b4','Mousseux':'#cfe3a6','Spiritueux':'#b07a3c','Dessert':'#c9902a','Désalcoolisé / léger':'#9ec7d6','Prêt-à-boire':'#b8a6e0','Autre':'#bbbbbb'};
 const COLMAP={RED:'Rouge',WHITE:'Blanc',ROSE:'Rosé'};
 F.forEach((f,i)=>{f.i=i;const c=colorOf(f.cat);f.color=(c==='Autre'||c==='Rouge'||c==='Blanc'||c==='Rosé')&&COLMAP[f.col]?COLMAP[f.col]:c});
+F.forEach(f=>{if(f.custom&&COLORS[f.custom.color])f.color=f.custom.color});
 
 // préférences locales (représentant affiché, magasins ajoutés à la main)
 const LS={get(k,d){try{const v=localStorage.getItem('hk-'+k);return v==null?d:JSON.parse(v)}catch(e){return d}},set(k,v){try{localStorage.setItem('hk-'+k,JSON.stringify(v));return true}catch(e){return false}}};
@@ -627,11 +631,10 @@ function callView(){
   const card=y=>{const pct=y.items?Math.round(y.done/y.items*100):0;return `<li><div class="body"><button class="lnk t" data-opensess="${y.x.id}">${esc(y.x.name)}</button> ${y.x.closed_at?'<span class="chip">Terminée</span>':'<span class="chip c-SA">En cours</span>'}
     <div class="w">${fdate(y.x.created_at)}${y.x.created_by?' · par '+esc(y.x.created_by):''} · ${y.x.products.length} produit${y.x.products.length>1?'s':''} · ${y.done}/${y.items} appels faits · ${y.n.cmd} commandé${y.n.cmd>1?'s':''}, ${y.n.prom} promesse${y.n.prom>1?'s':''}, ${y.n.non} pas commandé${y.n.non>1?'s':''}, ${y.n.nr} pas répondu · taux ${pctTxt(y.rate)}</div>
     <div class="prog"><i style="width:${pct}%"></i></div></div><button class="btn sm" data-opensess="${y.x.id}">Ouvrir</button></li>`};
-  return `<div class="head"><div><span class="eyebrow">Territoire de ${esc(st.rep)} · EZFocus période ${D.ref}</span><h1>Sessions d'appels</h1><p class="muted" style="margin:4px 0 0;max-width:72ch">Crée une session avec le ou les produits à vendre : l'outil sort les magasins à appeler, triés par caisses en jeu. Note le résultat de chaque appel pour suivre tes stats.</p></div><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn" data-mailnew>Rédiger un courriel</button><button class="btn" data-slnew>Planifier un SL</button><button class="btn primary" data-newsess>Nouvelle session</button></div></div>
+  return `<div class="head"><div><span class="eyebrow">Territoire de ${esc(st.rep)} · EZFocus période ${D.ref}</span><h1>Sessions d'appels</h1><p class="muted" style="margin:4px 0 0;max-width:72ch">Crée une session avec le ou les produits à vendre : l'outil sort les magasins à appeler, triés par caisses en jeu. Note le résultat de chaque appel pour suivre tes stats.</p></div><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn" data-mailnew>Rédiger un courriel</button><button class="btn primary" data-newsess>Nouvelle session</button></div></div>
   <div class="kpis">${kpi('Sessions',mine.length,'au total')}${kpi('En cours',open.length,'à terminer')}${kpi('Ce mois-ci',month.length,'sessions créées')}${kpi('Appels faits',stats.reduce((a,y)=>a+y.done,0),'sur '+stats.reduce((a,y)=>a+y.items,0)+' prévus')}${kpi('Taux de commande',pctTxt((()=>{const t=tot.cmd+tot.prom+tot.non;return t?tot.cmd/t:null})()),'commandés sur appels aboutis')}</div>
   <div class="kpis">${resKpis(tot)}</div>
   ${SESS_LOCAL?'<p class="muted" style="font-size:.8rem;margin:0">Les sessions sont gardées sur cet appareil seulement tant que la table Supabase n\'est pas créée.</p>':''}
-  ${SLL.length?`<section class="panel"><div class="panel-h"><h2>Lancements SL</h2><span class="muted num">${SLL.length}</span><p>Suivi de l'objectif : 80 % du lot vendu en 6 semaines (ventes de tous les magasins).</p></div><ul class="acts">${slCards()}</ul></section>`:''}
   <section class="panel"><div class="panel-h"><h2>Sessions</h2><span class="muted num">${mine.length}</span></div><ul class="acts">${stats.map(card).join('')||'<li class="empty">Aucune session pour l\'instant. Clique « Nouvelle session ».</li>'}</ul></section>`}
 function newSessView(){const n=st.calls.length;
   return `<div class="head"><div><span class="eyebrow">Territoire de ${esc(st.rep)}</span><h1>Nouvelle session d'appels</h1></div><button class="btn" data-sessback>Annuler</button></div>
@@ -745,11 +748,11 @@ function lossPanel(ms){const ids=new Set(ms.map(s=>s.i));
   </div></section>`}
 
 // ---------- Produits ----------
-function prodsView(){if(st.fam!=null)return famView(F[st.fam]);
+function prodsView(){if(st.np)return newProdView();if(st.fam!=null)return famView(F[st.fam]);
   const q=st.q.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
   const list=F.filter(f=>(!st.pact||(st.pact==='on')===isActive(f.i))&&(!st.color||f.color===st.color)&&(!st.ptype||prodType(f)===st.ptype)&&(!q||(f.n+' '+f.cat+' '+f.codes.join(' ')).normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().includes(q))).sort((a,b)=>b.t13-a.t13);
   const colors=Object.keys(COLORS).filter(c=>F.some(f=>f.color===c));
-  return `<div class="head"><div><span class="eyebrow">Portefeuille Hektars · ${F.length} produits</span><h1>Produits</h1></div></div>
+  return `<div class="head"><div><span class="eyebrow">Portefeuille Hektars · ${F.length} produits</span><h1>Produits</h1></div>${IS_ADMIN?'<button class="btn primary" data-np>Ajouter un produit</button>':''}</div>
   <div class="filters"><input type="search" id="pq" placeholder="Nom, catégorie, code SAQ…" value="${esc(st.q)}" aria-label="Rechercher un produit">
    <div class="seg" role="group" aria-label="Statut">${[['','Tous'],['on','Actifs'],['off','Inactifs']].map(([k,l])=>`<button data-pact="${k}" aria-pressed="${(st.pact||'')===k}">${l}</button>`).join('')}</div>
    <div class="seg" role="group" aria-label="Type SAQ">${['','RA','SA','SL'].map(t=>`<button data-ptype="${t}" aria-pressed="${st.ptype===t}">${t||'Tous types'}</button>`).join('')}</div></div>
@@ -799,7 +802,7 @@ function famView(f){const ops=byFam[f.i];const mine=ops.filter(o=>S[o.s].rep===s
      <dl class="facts"><dt>Format</dt><dd>${size(f.fmt)}</dd><dt>Prix SAQ</dt><dd>${nf1.format(f.px)} $</dd><dt>Catégorie</dt><dd><span class="colorsw" style="background:${COLORS[f.color]}"></span>${esc(f.color)} (${esc(f.cat)})</dd><dt>Type dans EZFocus</dt><dd>${esc(f.type)}</dd><dt>Pays</dt><dd>${esc(f.pays||'—')}</dd>${f.app?`<dt>Appellation</dt><dd>${esc(f.app)}</dd>`:''}${f.cep?`<dt>Cépage</dt><dd>${esc(f.cep)}</dd>`:''}</dl>
    </div></section>
    <div style="display:flex;flex-direction:column;gap:16px;min-width:0">
-    ${prodType(f)==='SL'?`<section class="panel"><div class="panel-h"><h2>Statut du SL</h2><p>Remplace ta feuille « Inventaire SL » : vert = à vendre, jaune = à venir, gris = ancien.</p></div><div class="pad"><div class="seg" role="group" aria-label="Statut SL">${SLST.map(([k,l])=>`<button data-slst="${k}" aria-pressed="${slStatus(f)===k}">${l}</button>`).join('')}</div></div></section>`:''}
+    ${prodType(f)==='SL'?`<section class="panel"><div class="panel-h"><h2>Statut du SL</h2><p>Remplace ta feuille « Inventaire SL » : vert = à vendre, jaune = à venir, gris = ancien.</p></div><div class="pad"><div class="seg" role="group" aria-label="Statut SL">${SLST.map(([k,l])=>`<button data-slst="${k}" aria-pressed="${slStatus(f)===k}">${l}</button>`).join('')}</div>${(()=>{const r=slInfo(f);return `<div style="margin-top:14px">${slForm(f)}</div><div class="w" style="margin-top:10px;font-size:.86rem">${slStateChip(r.state)} ${r.qty?`Objectif ${nf0.format(r.target)} cs en 6 semaines${r.sold!=null?` · ${cs(r.sold)} cs vendues depuis l'arrivée (${nf0.format((r.pct||0)*100)} %)`:''}`:''} · <a href="#suivisl">Voir le Suivi SL</a></div>`})()}</div></section>`:''}
     <section class="panel"><div class="panel-h"><h2>Où agir</h2><p>Les courbes de ventes restent dans EZFocus. Ici, seulement ce qui mène à une action.</p></div><div class="pad">
       <div class="stop-stats"><span>Croissance R13 ${pctH(gr(f.t13,f.l13))}</span>${prodType(f)==='SL'?`<span>Chez toi : à placer dans <b>${cnt('N')}</b> magasins, stock qui dort dans <b>${cnt('D')}</b>, en vente dans <b>${cnt('V')}</b></span>`:`<span>Chez toi : <b>${cnt('R')+cnt('O')}</b> ruptures, <b>${cnt('L')}</b> stocks faibles, <b>${cnt('P')}</b> inscriptions perdues, <b>${cnt('A')}</b> magasins où le proposer</span>`}<span>OBL dans <b>${f.nObl}</b> magasins</span></div>
     </div></section>
@@ -828,6 +831,66 @@ function perfView(){const rows=(IS_ADMIN?reps:[ME.rep_name].filter(r=>reps.inclu
   <section class="panel tablebox"><table><thead><tr><th>Représentant</th><th class="n">Magasins</th><th class="n">R13 (cs)</th><th class="n">vs an passé</th><th class="n">R3 vs an passé</th><th class="n">Visités 60 j</th><th class="n">Potentiel</th></tr></thead><tbody>
   ${rows.map(x=>`<tr${x.r===st.rep?' style="font-weight:600"':''}><td>${esc(x.r)}</td><td class="n">${x.n}</td><td class="n">${nf0.format(x.t13)}</td><td class="n">${pctH(gr(x.t13,x.l13))}</td><td class="n">${pctH(gr(x.t3,x.l3))}</td><td class="n">${nf0.format(x.vis/x.n*100)} %</td><td class="n">${money(x.pot)}</td></tr>`).join('')}
   </tbody></table></section>`}
+
+// ---------- Suivi SL : objectif 80 % du stock d'entrée vendu en 6 semaines ----------
+// Périodes SAQ : 13 périodes de 4 semaines ; P01 commence le dimanche 29 mars 2026 (estimation, modifiable dans la fiche)
+const P01=Date.UTC(2026,2,29),DAYMS=864e5;
+function periodOfDate(iso){let d=(Date.parse(iso+'T00:00:00Z')-P01)/DAYMS;while(d<0)d+=364;while(d>=364)d-=364;return 'P'+String(Math.min(13,Math.floor(d/28)+1)).padStart(2,'0')}
+function periodEnd(label){const n=+String(label).replace(/\D/g,'');let e=P01+n*28*DAYMS;const now=Date.now();while(e>now+28*DAYMS)e-=364*DAYMS;while(e<now-364*DAYMS)e+=364*DAYMS;return e}
+function slInfo(f){const s=setOf(f);let qty=+s.sl_qty||0,start=s.sl_start||null,period=s.sl_period||null;
+  if(!qty){const old=SLL.find(x=>x.fam_key===fk(f));if(old){qty=+old.qty||0;period=period||(old.period!=='Prochaine'?old.period:null)}}
+  if(!period&&start)period=periodOfDate(start);
+  const t=famSeries(f.i,null).t;const k=period?D.labels.indexOf(period):-1;const last=D.labels[D.labels.length-1];
+  const dataEnd=periodEnd(last);const st0=start?Date.parse(start+'T00:00:00Z'):(k>=0?periodEnd(period)-28*DAYMS:null);
+  let sold=null,soldAll=null;if(k>=0){soldAll=t.slice(k).reduce((a,b)=>a+b,0);
+    // fenêtre de 6 semaines : reste de la période d'arrivée + la part de la suivante (périodes de 4 semaines)
+    const pStart=periodEnd(period)-28*DAYMS;const o=st0!=null?Math.min(4,Math.max(0,(st0-pStart)/(7*DAYMS))):0;const r1=Math.min(1,Math.max(0,(6-(4-o))/4)),r2=Math.max(0,(6-(4-o)-4)/4);
+    sold=(t[k]||0)+(t[k+1]||0)*r1+(t[k+2]||0)*r2}else if(period&&st0!=null&&st0>dataEnd){sold=0;soldAll=0}
+  const weeks=st0==null?null:Math.max(0,(dataEnd-st0)/(7*DAYMS));const target=qty*.8;
+  const expected=weeks==null?null:target*Math.min(1,weeks/6);const pct=sold!=null&&target?sold/target:null;
+  const deadline=st0==null?null:st0+42*DAYMS;
+  let state='saisir';if(qty&&st0!=null){if(st0>dataEnd)state='attente';else if(sold==null)state='inconnu';else if(sold>=target)state='atteint';else if(weeks>=6)state='rate';else if(sold>=expected*.9)state='ok';else state='retard'}
+  else if(qty)state='date';
+  const ops=byFam[f.i]||[];const cnt=t2=>ops.filter(o=>o.t===t2).length;
+  return {f,qty,start,period,sold,soldAll,target,expected,pct,weeks,deadline,state,left:sold==null?null:Math.max(0,qty-sold),N:cnt('N'),Dd:cnt('D'),V:cnt('V'),stores:f.nT3,last}}
+const SLSTATE={atteint:['Objectif atteint','var(--good)'],ok:['Dans les temps','var(--good)'],retard:['En retard','var(--R)'],rate:['Objectif manqué','var(--R)'],attente:['Pas encore arrivé','var(--P)'],inconnu:['Ventes non visibles','var(--muted)'],saisir:["Stock d'entrée à saisir",'var(--P)'],date:["Date d'arrivée à saisir",'var(--P)']};
+const slStateChip=k=>`<span class="chip" style="color:${SLSTATE[k][1]};border:1px solid currentColor;background:transparent">${SLSTATE[k][0]}</span>`;
+function slForm(f,compact){const s=setOf(f);const per=s.sl_period||(s.sl_start?periodOfDate(s.sl_start):'');
+  return `<div class="slform"><label>Stock d'entrée (caisses)<input type="text" inputmode="numeric" id="slqty" value="${esc(String(s.sl_qty??''))}" placeholder="ex. 300"${ro}></label>
+    <label>Date d'arrivée en succursale<input type="date" id="slstart" value="${esc(s.sl_start||'')}"${ro}></label>
+    <label>Période SAQ d'arrivée<select id="slper"${ro}><option value="">${s.sl_start?'Calculée : '+periodOfDate(s.sl_start):'Choisir…'}</option>${[...new Set([...D.labels,'P01','P02','P03','P04','P05','P06','P07','P08','P09','P10','P11','P12','P13'])].map(l=>`<option${s.sl_period===l?' selected':''}>${l}</option>`).join('')}</select></label>
+    ${IS_ADMIN?`<label style="justify-content:flex-end"><button class="btn primary" data-slsave="${f.i}">Enregistrer</button></label>`:''}</div>`}
+function slSuiviView(){const all=F.filter(f=>prodType(f)==='SL'&&isActive(f.i));const showOld=!!st.slold;
+  const rows0=all.filter(f=>showOld||slStatus(f)!=='ancien').map(slInfo);const todo=rows0.filter(r=>!r.qty).sort((a,b)=>b.stores-a.stores);const rows=rows0.filter(r=>r.qty);
+  const order={retard:0,saisir:1,date:2,ok:3,attente:4,inconnu:5,rate:6,atteint:7};rows.sort((a,b)=>order[a.state]-order[b.state]||(a.deadline||9e15)-(b.deadline||9e15));
+  const n=k=>rows.filter(r=>r.state===k).length;const kpi=(lb,v,sub,c)=>`<div class="kpi"><span>${lb}</span><b${c?` style="color:${c}"`:''}>${v}</b><span>${sub}</span></div>`;
+  const totQ=rows.reduce((a,r)=>a+r.qty,0),totS=rows.reduce((a,r)=>a+(r.sold||0),0);
+  const row=r=>{const p=r.pct==null?0:Math.min(1,r.pct);const ex=r.expected!=null&&r.target?Math.min(1,r.expected/r.target):null;
+    const week=r.weeks==null?'—':r.weeks<=0?'avant l\'arrivée':r.weeks>=6?'6 semaines passées':'semaine '+Math.ceil(r.weeks)+' sur 6';
+    return `<li class="click" data-fam="${r.f.i}" tabindex="0" style="cursor:pointer"><div class="body" style="flex:1;min-width:0">
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><span class="t">${esc(pname(r.f))}</span> ${slChip(r.f)} ${slStateChip(r.state)}${r.f.custom?' <span class="chip">Ajouté à la main</span>':''}</div>
+      <div class="w">${r.qty?`<b>${nf0.format(r.qty)} cs</b> reçues`:'Stock d\'entrée non saisi'}${r.start?' · arrivée le '+fdate(r.start+'T12:00:00'):''}${r.period?' ('+esc(r.period)+')':''}${r.deadline?' · échéance 6 sem. le '+fdate(r.deadline):''} · ${week} au dernier relevé EZFocus (${esc(r.last)})</div>
+      ${r.qty?`<div class="w">Objectif ${nf0.format(r.target)} cs · ${r.sold==null?'ventes depuis l\'arrivée non visibles dans les 13 périodes EZFocus':`<b>${cs(r.sold)} cs vendues</b> ${r.weeks>=6?'dans les 6 premières semaines':'depuis l\'arrivée'} (${nf0.format((r.pct||0)*100)} % de l'objectif)${r.weeks>=6&&r.soldAll>r.sold?' · '+cs(r.soldAll)+' cs au total':''}${r.expected!=null&&r.weeks>0&&r.weeks<6?' · attendu à ce stade : '+cs(r.expected)+' cs':''} · reste ${cs(Math.max(0,r.qty-r.soldAll))} cs du lot`}</div>
+      <div class="prog" style="position:relative"><i style="width:${p*100}%;background:${r.state==='retard'||r.state==='rate'?'var(--R)':r.state==='atteint'||r.state==='ok'?'var(--good)':'var(--accent)'}"></i>${ex!=null&&ex<1?`<span title="Attendu à ce stade" style="position:absolute;top:-3px;bottom:-3px;left:${ex*100}%;width:2px;background:var(--ink)"></span>`:''}</div>`:''}
+      <div class="w">En vente dans ${r.stores} magasins · à placer dans ${r.N} · stock qui dort dans ${r.Dd}</div></div></li>`};
+  return `<div class="head"><div><span class="eyebrow">Objectif : 80 % du stock d'entrée vendu en 6 semaines</span><h1>Suivi SL</h1><p class="muted" style="margin:4px 0 0;max-width:74ch">Ventes de tout le réseau depuis la période d'arrivée, d'après EZFocus. Le trait noir sur la barre montre où il faudrait être à ce stade pour tenir 80 % en 6 semaines. Pour ajouter un SL : Produits, puis « Ajouter un produit » ou type SL sur une fiche existante.</p></div>
+    <div class="seg" role="group" aria-label="Afficher"><button data-slold="0" aria-pressed="${!showOld}">En cours</button><button data-slold="1" aria-pressed="${showOld}">Avec les anciens</button></div></div>
+  <div class="kpis">${kpi('SL suivis',rows.length,nf0.format(totQ)+' cs reçues')}${kpi('Dans les temps',n('ok')+n('atteint'),n('atteint')+' objectif atteint','var(--good)')}${kpi('En retard',n('retard')+n('rate'),n('rate')+' objectif manqué','var(--R)')}${kpi('À compléter',todo.length+n('date'),'stock ou date à saisir','var(--P)')}${kpi('Caisses vendues',cs(totS),'depuis l\'arrivée')}</div>
+  <section class="panel"><ul class="acts">${rows.map(row).join('')||'<li class="empty">Aucun SL suivi pour l\'instant. Saisis le stock d\'entrée d\'un SL (liste ci-dessous) ou ajoute un produit depuis Produits.</li>'}</ul></section>
+  ${todo.length?`<details class="panel"${rows.length?'':' open'}><summary class="panel-h" style="cursor:pointer"><h2 style="display:inline">SL sans stock d'entrée (${todo.length})</h2><p>Clique sur un SL pour saisir son stock d'entrée et sa date d'arrivée : il passera dans le suivi.</p></summary><ul class="acts">${todo.map(r=>`<li class="click" data-fam="${r.f.i}" tabindex="0" style="cursor:pointer;padding:8px 18px"><div class="body" style="flex:1"><span class="t">${esc(pname(r.f))}</span> ${slChip(r.f)}</div><span class="muted" style="font-size:.8rem">en vente dans ${r.stores} magasins</span></li>`).join('')}</ul></details>`:''}`}
+function newProdView(){const p=st.np;
+  return `<div><button class="btn sm" data-npcancel>← Tous les produits</button></div><div class="head"><div><span class="eyebrow">Portefeuille Hektars</span><h1>Ajouter un produit</h1><p class="muted" style="margin:4px 0 0;max-width:72ch">Pour un produit qui n'est pas encore dans EZFocus, par exemple un nouveau SL. Il apparaîtra dans Produits et dans le Suivi SL. Ses ventes s'afficheront quand EZFocus le contiendra sous le même nom et format.</p></div></div>
+  <section class="panel"><div class="pad slform">
+    <label style="flex:1;min-width:240px">Nom du produit<input id="npn" value="${esc(p.n)}" placeholder="ex. Moillard Maranges"></label>
+    <label>Format (ml)<input id="npfmt" inputmode="numeric" value="${esc(p.fmt)}" placeholder="750"></label>
+    <label>Prix SAQ ($)<input id="nppx" inputmode="decimal" value="${esc(p.px)}" placeholder="24,95"></label>
+    <label>Code SAQ<input id="npcode" inputmode="numeric" value="${esc(p.code)}"></label>
+    <label>Catégorie<select id="npcolor">${Object.keys(COLORS).map(c=>`<option${p.color===c?' selected':''}>${c}</option>`).join('')}</select></label>
+    <label>Type SAQ<select id="nptype">${['SL','SA','RA'].map(t=>`<option${p.type===t?' selected':''}>${t}</option>`).join('')}</select></label></div></section>
+  ${p.type==='SL'?`<section class="panel"><div class="panel-h"><h2>Lot SL</h2><p>Le stock d'entrée sert au Suivi SL (objectif 80 % en 6 semaines). Tu pourras le modifier ensuite dans la fiche.</p></div><div class="pad slform">
+    <label>Stock d'entrée (caisses)<input id="npqty" inputmode="numeric" value="${esc(p.qty)}" placeholder="ex. 300"></label>
+    <label>Date d'arrivée en succursale<input type="date" id="npstart" value="${esc(p.start)}"></label></div></section>`:''}
+  <div><button class="btn primary" data-npsave>Ajouter le produit</button></div>`}
 
 // ---------- Aperçu : nouvelles vues ----------
 const SLST=[['actif','À vendre'],['avenir','À venir'],['ancien','Ancien']];
@@ -898,18 +961,18 @@ function mailPanel(){const L=mailSL();const sel=st.mailSel||[];const txt=mailTex
 function synchroView(){if(!IS_ADMIN)return '<div class="panel empty">Réservé à l\'administrateur.</div>';
   return `<div class="head"><div><span class="eyebrow">Données actuelles : période ${D.ref}, extraites le ${dataDate}</span><h1>Synchroniser EZFocus</h1></div></div>
   <section class="panel"><div class="panel-h"><h2>Mettre à jour les données</h2><p>À faire chaque matin. Tous les représentants voient les nouvelles données dès que c'est terminé.</p></div><div class="pad">${hkSyncHelp()}</div></section>`}
-const PAGES={aujourdhui:todayView,appels:callView,degust:tastView,produits:prodsView,brief:briefView,synchro:synchroView};
+const PAGES={aujourdhui:todayView,appels:callView,suivisl:slSuiviView,degust:tastView,produits:prodsView,brief:briefView,synchro:synchroView};
 function render(keepFocus){document.getElementById('avatar').textContent=st.rep.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();document.querySelectorAll('nav.tabs a').forEach(a=>a.toggleAttribute('aria-current',a.dataset.p===st.page)||a.dataset.p===st.page&&a.setAttribute('aria-current','page'));
   document.querySelectorAll('nav.tabs a').forEach(a=>{if(a.dataset.p===st.page)a.setAttribute('aria-current','page');else a.removeAttribute('aria-current')});
   document.getElementById('view').innerHTML=PAGES[st.page]();
   const cq=document.getElementById('cq');if(cq&&keepFocus){cq.focus();cq.setSelectionRange(cq.value.length,cq.value.length)}
   const tq=document.getElementById('tq');if(tq&&keepFocus){tq.focus();tq.setSelectionRange(tq.value.length,tq.value.length)}
   const pq=document.getElementById('pq');if(pq&&keepFocus){pq.focus();pq.setSelectionRange(pq.value.length,pq.value.length)}}
-function fromHash(){const h=location.hash.slice(1);st.page=PAGES[h]?h:'aujourdhui';st.fam=null;render();window.scrollTo(0,0)}
+function fromHash(){const h=location.hash.slice(1);st.page=PAGES[h]?h:'aujourdhui';st.fam=null;st.np=null;render();window.scrollTo(0,0)}
 window.addEventListener('hashchange',fromHash);
 function openFam(i){st.fam=+i;if(st.page!=='produits'){st.page='produits';history.replaceState(null,'','#produits')}render();window.scrollTo(0,0)}
 function saveRoute(){LS.set(routeKey(),getRoute())}
-document.addEventListener('click',e=>{const t=e.target.closest('[data-note],[data-slst],[data-copybrief],[data-mailf],[data-copymail],[data-mailpre],[data-gcal],[data-dt],[data-callf],[data-newsess],[data-mailnew],[data-tnew],[data-tcancel],[data-tadd],[data-trm],[data-tsave],[data-tdel],[data-mailfam],[data-mailsess],[data-mailback],[data-mailregen],[data-mailcopy],[data-slnew],[data-sllaunch],[data-res],[data-resall],[data-sessback],[data-opensess],[data-createsess],[data-closesess],[data-reopensess],[data-atab],[data-more],[data-calrefresh],[data-pact],[data-setact],[data-fam],[data-back],[data-ptype],[data-color],[data-settype],[data-savepitch],[data-rmphoto],[data-photo],[data-rm],[data-copystop],[data-copyday],[data-addroute]');if(!t)return;const d=t.dataset;
+document.addEventListener('click',e=>{const t=e.target.closest('[data-slsave],[data-slold],[data-np],[data-npcancel],[data-npsave],[data-note],[data-slst],[data-copybrief],[data-mailf],[data-copymail],[data-mailpre],[data-gcal],[data-dt],[data-callf],[data-newsess],[data-mailnew],[data-tnew],[data-tcancel],[data-tadd],[data-trm],[data-tsave],[data-tdel],[data-mailfam],[data-mailsess],[data-mailback],[data-mailregen],[data-mailcopy],[data-slnew],[data-sllaunch],[data-res],[data-resall],[data-sessback],[data-opensess],[data-createsess],[data-closesess],[data-reopensess],[data-atab],[data-more],[data-calrefresh],[data-pact],[data-setact],[data-fam],[data-back],[data-ptype],[data-color],[data-settype],[data-savepitch],[data-rmphoto],[data-photo],[data-rm],[data-copystop],[data-copyday],[data-addroute]');if(!t)return;const d=t.dataset;
   if(d.pact!=null){st.pact=d.pact;render();return}
   if(d.note!=null)return copy(noteText(S[+d.note]));
   if(d.slst!=null){saveSet(F[st.fam],{sl_status:d.slst},'Statut SL mis à jour');return}
@@ -918,6 +981,16 @@ document.addEventListener('click',e=>{const t=e.target.closest('[data-note],[dat
   if(d.copymail!=null){const ta=document.getElementById('mailtxt');return copy(ta?ta.value:mailText())}
   if(d.mailpre!=null){st.mailSel=[+d.mailpre];st.sess=null;location.hash='appels';setTimeout(()=>{const m=document.getElementById('mailbox');if(m)m.scrollIntoView()},80);return}
   if(d.setact!=null){saveSet(F[st.fam],{active:d.setact==='1'},d.setact==='1'?'Produit actif : il revient dans les recommandations':'Produit inactif : retiré des recommandations');return}
+  if(d.slold!=null){st.slold=d.slold==='1';render();return}
+  if(d.np!=null&&!('npcancel' in d)&&!('npsave' in d)&&t.hasAttribute('data-np')){st.np={n:'',fmt:'750',px:'',code:'',color:'Rouge',type:'SL',qty:'',start:''};render();window.scrollTo(0,0);return}
+  if(d.npcancel!=null){st.np=null;render();return}
+  if(d.npsave!=null){const p=st.np;const n=(p.n||'').trim();const fmt=parseInt(p.fmt)||0;if(!n||!fmt){toast('Indique au moins le nom et le format.');return}
+    const key=n+'|'+fmt;if(F.some(f=>fk(f)===key)){toast('Ce produit existe déjà.');return}
+    const fake={n,fmt};const patch={custom:{n,fmt,px:parseFloat(String(p.px).replace(',','.'))||0,code:(p.code||'').trim(),color:p.color},saq_type:p.type};
+    if(p.type==='SL'){patch.sl_qty=parseInt(p.qty)||null;patch.sl_start=p.start||null;patch.sl_period=p.start?periodOfDate(p.start):null;patch.sl_status=p.start&&p.start<=isoDay(new Date())?'actif':'avenir'}
+    saveSet(fake,patch,'Produit ajouté').then(ok=>{if(ok){LS.set('openNew',key);location.hash=p.type==='SL'?'#suivisl':'#produits';location.reload()}});return}
+  if(d.slsave!=null){const f=F[+d.slsave];const q=parseInt((document.getElementById('slqty').value||'').replace(/\D/g,''))||null;const sd=document.getElementById('slstart').value||null;const per=document.getElementById('slper').value||(sd?periodOfDate(sd):null);
+    saveSet(f,{sl_qty:q,sl_start:sd,sl_period:per},'Lot SL enregistré');return}
   if(d.fam!=null)return openFam(d.fam);
   if(d.back!=null){st.fam=null;render();return}
   if(d.ptype!=null){st.ptype=d.ptype;render();return}
@@ -954,7 +1027,7 @@ document.addEventListener('click',e=>{const t=e.target.closest('[data-note],[dat
   if(d.atab){st.atab=d.atab;st.more=0;render();return}
   if(d.more!=null){st.more=(st.more||20)+20;render();return}
   if(d.color!=null){st.color=d.color;render();return}
-  if(d.settype){saveSet(F[st.fam],{saq_type:d.settype},'Type SAQ mis à jour');return}
+  if(d.settype){const f=F[st.fam];saveSet(f,{saq_type:d.settype},d.settype==='SL'&&!setOf(f).sl_qty?'Type SL : saisis le stock d\'entrée dans « Statut du SL »':'Type SAQ mis à jour').then(()=>{const q=document.getElementById('slqty');if(q&&!q.value){q.scrollIntoView({block:'center'});q.focus()}});return}
   if(d.savepitch!=null){saveSet(F[st.fam],{pitch:document.getElementById('pitch').value.trim()},'Pitch enregistré');return}
   if(d.photo!=null){if(!IS_ADMIN)return;const p=photosOf(F[st.fam]);const k=+d.photo;p.unshift(p.splice(k,1)[0]);saveSet(F[st.fam],{photos:p});return}
   if(d.rmphoto!=null){const p=photosOf(F[st.fam]);p.shift();saveSet(F[st.fam],{photos:p},'Photo retirée');return}
@@ -967,8 +1040,10 @@ document.addEventListener('click',e=>{const t=e.target.closest('[data-note],[dat
 });
 document.addEventListener('keydown',e=>{if(e.key==='Enter'&&e.target.matches('tr[data-fam]'))openFam(e.target.dataset.fam)});
 document.addEventListener('mousedown',e=>{if(e.target.closest&&e.target.closest('.combo-opt'))e.preventDefault()});
-document.addEventListener('input',e=>{if(e.target.id==='sessname')st.sessName=e.target.value;if((e.target.id==='mailsubj'||e.target.id==='mailbody')&&st.mailEdit){st.mailEdit[e.target.id==='mailsubj'?'subj':'body']=e.target.value;const a=document.querySelector('a[href^="mailto:"]');if(a)a.href='mailto:?subject='+encodeURIComponent(st.mailEdit.subj)+'&body='+encodeURIComponent(st.mailEdit.body)}if(e.target.id==='slq'){st.slq=e.target.value;clearTimeout(st.slqt);st.slqt=setTimeout(()=>{render();const q=document.getElementById('slq');if(q){q.focus();q.setSelectionRange(q.value.length,q.value.length)}},400)}if(e.target.id==='pq'){st.q=e.target.value;render(true)}if(e.target.id==='cq'){st.cq=e.target.value;render(true)}if(e.target.id==='tq'){st.tq=e.target.value;render(true)}if(st.tnew){if(e.target.id==='tnotes')st.tnew.notes=e.target.value;if(e.target.dataset&&e.target.dataset.tqty!=null){st.tnew.items[+e.target.dataset.tqty].qty=e.target.value.replace(/[^0-9]/g,'');const b=document.querySelector('[data-tsave]');if(b&&!b.disabled)b.textContent='Enregistrer la dégustation ('+st.tnew.items.reduce((a,y)=>a+(+y.qty||0),0)+' bouteilles)'}}});
+document.addEventListener('input',e=>{if(st.np){const m={npn:'n',npfmt:'fmt',nppx:'px',npcode:'code',npqty:'qty',npstart:'start',npcolor:'color'}[e.target.id];if(m)st.np[m]=e.target.value}if(e.target.id==='sessname')st.sessName=e.target.value;if((e.target.id==='mailsubj'||e.target.id==='mailbody')&&st.mailEdit){st.mailEdit[e.target.id==='mailsubj'?'subj':'body']=e.target.value;const a=document.querySelector('a[href^="mailto:"]');if(a)a.href='mailto:?subject='+encodeURIComponent(st.mailEdit.subj)+'&body='+encodeURIComponent(st.mailEdit.body)}if(e.target.id==='slq'){st.slq=e.target.value;clearTimeout(st.slqt);st.slqt=setTimeout(()=>{render();const q=document.getElementById('slq');if(q){q.focus();q.setSelectionRange(q.value.length,q.value.length)}},400)}if(e.target.id==='pq'){st.q=e.target.value;render(true)}if(e.target.id==='cq'){st.cq=e.target.value;render(true)}if(e.target.id==='tq'){st.tq=e.target.value;render(true)}if(st.tnew){if(e.target.id==='tnotes')st.tnew.notes=e.target.value;if(e.target.dataset&&e.target.dataset.tqty!=null){st.tnew.items[+e.target.dataset.tqty].qty=e.target.value.replace(/[^0-9]/g,'');const b=document.querySelector('[data-tsave]');if(b&&!b.disabled)b.textContent='Enregistrer la dégustation ('+st.tnew.items.reduce((a,y)=>a+(+y.qty||0),0)+' bouteilles)'}}});
 document.addEventListener('change',e=>{
+  if(st.np&&e.target.id==='nptype'){st.np.type=e.target.value;render();return}
+  if(st.np&&(e.target.id==='npstart'||e.target.id==='npcolor')){st.np[e.target.id==='npstart'?'start':'color']=e.target.value;return}
   if(e.target.id==='mailstore'){st.mailStore=e.target.value;render();return}
   if(st.tnew&&(e.target.id==='tday'||e.target.id==='tstore')){st.tnew[e.target.id==='tday'?'day':'store']=e.target.value;render();return}
   if(e.target.matches&&e.target.matches('[data-mailstore]')){st.mail.store=e.target.value;st.mailEdit=null;render();return}

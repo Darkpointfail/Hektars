@@ -61,3 +61,10 @@ create policy tastings_all on public.tastings for all to authenticated using (pu
 
 -- Statut des SL (à vendre / à venir / ancien), remplace la feuille Inventaire SL
 alter table public.product_settings add column if not exists sl_status text check (sl_status in ('actif','avenir','ancien'));
+
+-- Suivi SL : stock d'entrée, date et période d'arrivée ; produits ajoutés à la main (pas encore dans EZFocus)
+alter table public.product_settings add column if not exists sl_qty numeric;
+alter table public.product_settings add column if not exists sl_start date;
+alter table public.product_settings add column if not exists sl_period text;
+alter table public.product_settings add column if not exists custom jsonb;
+notify pgrst, 'reload schema';
